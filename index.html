@@ -68,16 +68,17 @@
             </div>
 
             <!-- ステップナビゲーション -->
-            <div class="grid grid-cols-2 sm:grid-cols-9 gap-2 bg-white p-3 rounded-2xl shadow-sm border border-slate-200 text-center text-xs font-bold">
+            <div class="grid grid-cols-2 sm:grid-cols-10 gap-2 bg-white p-3 rounded-2xl shadow-sm border border-slate-200 text-center text-xs font-bold">
                 <div onclick="switchStep(1)" id="step1-indicator" class="p-2 rounded-lg bg-amber-600 text-white transition cursor-pointer">① 板材の設定</div>
                 <div onclick="switchStep(2)" id="step2-indicator" class="p-2 rounded-lg bg-slate-100 text-slate-400 transition cursor-pointer">② けがき・切断</div>
                 <div onclick="switchStep(3)" id="step3-indicator" class="p-2 rounded-lg bg-slate-100 text-slate-400 transition cursor-pointer">③ 部品名・不要パーツ</div>
                 <div onclick="switchStep(4)" id="step4-indicator" class="p-2 rounded-lg bg-slate-100 text-slate-400 transition cursor-pointer">④ 材料取図一覧</div>
                 <div onclick="switchStep(5)" id="step5-indicator" class="p-2 rounded-lg bg-slate-100 text-slate-400 transition cursor-pointer">⑤ 3D組立</div>
-                <div onclick="switchStep(6)" id="step6-indicator" class="p-2 rounded-lg bg-slate-100 text-slate-400 transition cursor-pointer">⑥ 釘打ち</div>
-                <div onclick="switchStep(7)" id="step7-indicator" class="p-2 rounded-lg bg-slate-100 text-slate-400 transition cursor-pointer">⑦ 正投影図</div>
-                <div onclick="switchStep(8)" id="step8-indicator" class="p-2 rounded-lg bg-slate-100 text-slate-400 transition cursor-pointer">⑧ PDF出力</div>
-                <div onclick="switchStep(9)" id="step9-indicator" class="p-2 rounded-lg bg-slate-100 text-slate-400 transition cursor-pointer">⑨ シミュレーション</div>
+                <div onclick="switchStep(7,'parts')" id="step7-indicator" class="p-2 rounded-lg bg-slate-100 text-slate-400 transition cursor-pointer">⑥ 正投影図</div>
+                <div onclick="switchStep(6)" id="step6-indicator" class="p-2 rounded-lg bg-slate-100 text-slate-400 transition cursor-pointer">⑦ 釘打ち（3D）</div>
+                <div onclick="switchStep(7,'nails')" id="step7n-indicator" class="p-2 rounded-lg bg-slate-100 text-slate-400 transition cursor-pointer">⑧ 釘打ち（正投影図）</div>
+                <div onclick="switchStep(8)" id="step8-indicator" class="p-2 rounded-lg bg-slate-100 text-slate-400 transition cursor-pointer">⑨ PDF出力</div>
+                <div onclick="switchStep(9)" id="step9-indicator" class="p-2 rounded-lg bg-slate-100 text-slate-400 transition cursor-pointer">⑩ シミュレーション</div>
             </div>
 
             <!-- ステップ①：板材の設定 (名称・長さ・幅・厚さ) -->
@@ -351,7 +352,7 @@
                                 </div>
                             </div>
 
-                            <div class="flex flex-col gap-1.5 border-t pt-3">
+                            <div class="hidden flex-col gap-1.5 border-t pt-3">
                                 <label class="text-xs font-semibold text-slate-600">🔨 釘打ち:</label>
                                 <button id="nail-mode-btn" onclick="toggleNailMode3D()" class="text-xs font-bold py-1.5 rounded border transition bg-white text-slate-700 border-slate-300 hover:bg-red-50">🔨 釘を打つモード：オフ</button>
                                 <input type="number" id="nail-length-input-3d" min="1" placeholder="釘の長さ (mm・任意)" oninput="document.getElementById('nail-length-input').value=this.value" class="w-full p-1.5 bg-white border border-slate-300 rounded text-xs">
@@ -425,8 +426,8 @@
                     <button onclick="backToStep4()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium px-5 py-2.5 rounded-lg text-sm transition border border-slate-300">
                         ← 材料取図一覧に戻る
                     </button>
-                    <button onclick="goToNail()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-8 py-3 rounded-lg shadow-lg transition flex items-center gap-2 text-base">
-                        🔨 釘打ちへ進む ➔
+                    <button onclick="goToOrtho()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-8 py-3 rounded-lg shadow-lg transition flex items-center gap-2 text-base">
+                        📐 正投影図へ進む ➔
                     </button>
                 </div>
             </section>
@@ -435,14 +436,15 @@
             <section id="step7-container" class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 hidden flex flex-col gap-6">
                 <div class="border-b pb-3 flex justify-between items-center">
                     <div>
-                        <h2 class="text-lg font-bold text-amber-900">⑦ 第三角法による正投影図（部品・釘の微調整）</h2>
-                        <p class="text-sm text-slate-500">3D組立で組み立てた作品の正投影図です。部品や釘を選んで位置を微調整すると、3D組立・釘打ちにも反映されます。</p>
+                        <h2 id="ortho-title" class="text-lg font-bold text-amber-900">⑥ 第三角法による正投影図</h2>
+                        <p id="ortho-desc" class="text-sm text-slate-500"></p>
                     </div>
-                    <button onclick="goToNail()" class="text-sm text-amber-800 hover:underline">← 釘打ちに戻る</button>
+                    <button id="ortho-head-back" onclick="goToAssembly()" class="text-sm text-amber-800 hover:underline">← 3D組立に戻る</button>
                 </div>
 
                 <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
                     <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-col gap-4 lg:col-span-1">
+                        <div id="ortho-part-panel" class="flex flex-col gap-4">
                         <h3 class="font-bold text-sm text-slate-700 border-b pb-2">🛠️ 部品を選ぶ</h3>
                         <div id="ortho-parts-list" class="flex flex-col gap-1.5 max-h-[200px] overflow-y-auto"></div>
 
@@ -482,7 +484,18 @@
                             </div>
                         </div>
 
-                        <div class="border-t pt-3 flex flex-col gap-2">
+                        </div>
+
+                        <div id="ortho-nail-panel" class="flex flex-col gap-2">
+                            <div class="flex flex-col gap-1">
+                                <label class="text-xs font-semibold text-slate-600">1回に動かす量 (mm):</label>
+                                <div class="grid grid-cols-4 gap-1" id="ortho-step-buttons2">
+                                    <button onclick="setOrthoStep(0.5)" data-step="0.5" class="ortho-step bg-white border text-xs py-1.5 rounded font-bold">0.5</button>
+                                    <button onclick="setOrthoStep(1)" data-step="1" class="ortho-step bg-white border text-xs py-1.5 rounded font-bold">1</button>
+                                    <button onclick="setOrthoStep(5)" data-step="5" class="ortho-step bg-white border text-xs py-1.5 rounded font-bold">5</button>
+                                    <button onclick="setOrthoStep(10)" data-step="10" class="ortho-step bg-white border text-xs py-1.5 rounded font-bold">10</button>
+                                </div>
+                            </div>
                             <h3 class="font-bold text-sm text-amber-900" id="ortho-nail-name">選択中の釘: なし</h3>
                             <div id="ortho-nail-list" class="flex flex-col gap-1.5 max-h-[120px] overflow-y-auto"></div>
                             <div class="grid grid-cols-3 gap-1 text-xs">
@@ -493,12 +506,12 @@
                                 <button onclick="moveNail('y', -1)" class="bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 py-1.5 rounded font-bold text-emerald-700">▼ 下へ</button>
                                 <button onclick="moveNail('x', 1)" class="bg-red-50 border border-red-200 hover:bg-red-100 py-1.5 rounded font-bold text-red-700">右へ ▶</button>
                             </div>
+                            <button onclick="centerSelectedNail()" class="bg-amber-100 hover:bg-amber-200 text-amber-900 text-xs font-bold py-1.5 rounded border border-amber-300">⚖️ 板の厚さの半分に合わせる</button>
                             <span class="text-[10px] text-slate-500">釘は、打った部品の面の上で動きます（動かす量は上の0.5〜10mm）。</span>
                         </div>
 
                         <div class="border-t pt-2">
-                            <span class="text-[10px] text-slate-500 leading-tight block">
-                                💡 図の部品や釘（図の中の釘の頭）をクリックするか、一覧から選びます。動かした結果は3D組立・釘打ちとつながっています。
+                            <span id="ortho-tip" class="text-[10px] text-slate-500 leading-tight block">
                             </span>
                         </div>
                     </div>
@@ -509,11 +522,11 @@
                 </div>
 
                 <div class="flex justify-between items-center pt-4 border-t">
-                    <button onclick="goToNail()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium px-5 py-2.5 rounded-lg text-sm transition border border-slate-300">
-                        ← 釘打ちに戻る
+                    <button id="ortho-foot-back" onclick="goToAssembly()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium px-5 py-2.5 rounded-lg text-sm transition border border-slate-300">
+                        ← 3D組立に戻る
                     </button>
-                    <button onclick="goToStep8()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-8 py-3 rounded-lg shadow-lg transition flex items-center gap-2 text-base">
-                        📄 PDF出力画面へ進む ➔
+                    <button id="ortho-foot-next" onclick="goToNail()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-8 py-3 rounded-lg shadow-lg transition flex items-center gap-2 text-base">
+                        🔨 釘打ち（3D）へ進む ➔
                     </button>
                 </div>
             </section>
@@ -522,10 +535,10 @@
             <section id="step6-container" class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 hidden flex flex-col gap-6">
                 <div class="border-b pb-3 flex justify-between items-center">
                     <div>
-                        <h2 class="text-lg font-bold text-amber-900">⑥ 釘打ちの位置</h2>
-                        <p class="text-sm text-slate-500">3D図を好きな向きに回して、打ちたい面の部品をクリックすると、その場所に釘を打ち込みます。打った釘は、正投影図とPDFにも載ります。</p>
+                        <h2 class="text-lg font-bold text-amber-900">⑦ 釘打ち（3D）</h2>
+                        <p class="text-sm text-slate-500">3D図を好きな向きに回して、打ちたい面の部品をクリックすると、その場所に釘を打ち込みます。打った釘は、次の「釘打ち（正投影図）」で位置を微調整できます。</p>
                     </div>
-                    <button onclick="goToAssembly()" class="text-sm text-amber-800 hover:underline">← 3D組立に戻る</button>
+                    <button onclick="goToOrtho()" class="text-sm text-amber-800 hover:underline">← 正投影図に戻る</button>
                 </div>
 
                 <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -558,6 +571,7 @@
                         <div class="border-t pt-3 flex flex-col gap-2">
                             <h3 class="font-bold text-sm text-amber-900">打った釘の一覧</h3>
                             <div id="nail-list" class="flex flex-col gap-1.5 max-h-[260px] overflow-y-auto"></div>
+                            <button onclick="centerSelectedNail()" class="bg-amber-100 hover:bg-amber-200 text-amber-900 text-xs font-bold py-2 rounded-xl border border-amber-300">⚖️ 選んだ釘を板の厚さの半分に合わせる</button>
                             <button onclick="clearNails()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-medium py-2 rounded-xl">すべて消す</button>
                         </div>
                         <div class="border-t pt-2">
@@ -602,11 +616,11 @@
                 </div>
 
                 <div class="flex justify-between items-center pt-4 border-t">
-                    <button onclick="goToAssembly()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium px-5 py-2.5 rounded-lg text-sm transition border border-slate-300">
-                        ← 3D組立に戻る
+                    <button onclick="goToOrtho()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium px-5 py-2.5 rounded-lg text-sm transition border border-slate-300">
+                        ← 正投影図に戻る
                     </button>
-                    <button onclick="goToOrtho()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-8 py-3 rounded-lg shadow-lg transition flex items-center gap-2 text-base">
-                        📐 正投影図へ進む ➔
+                    <button onclick="goToOrthoNail()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-8 py-3 rounded-lg shadow-lg transition flex items-center gap-2 text-base">
+                        📐 釘打ち（正投影図）へ進む ➔
                     </button>
                 </div>
             </section>
@@ -615,10 +629,10 @@
             <section id="step8-container" class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 hidden flex flex-col gap-6">
                 <div class="border-b pb-3 flex justify-between items-center">
                     <div>
-                        <h2 class="text-lg font-bold text-amber-900">⑧ PDF出力・コメント入力</h2>
+                        <h2 class="text-lg font-bold text-amber-900">⑨ PDF出力・コメント入力</h2>
                         <p class="text-sm text-slate-500">製作レポート用のコメントを入力し、レイアウト（1ページ目：構想図・部品表・材料取り図、2ページ目：第三角法の正投影図）を確認してPDFとして保存できます。</p>
                     </div>
-                    <button onclick="goToOrtho()" class="text-sm text-amber-800 hover:underline">← 正投影図に戻る</button>
+                    <button onclick="goToOrthoNail()" class="text-sm text-amber-800 hover:underline">← 釘打ち（正投影図）に戻る</button>
                 </div>
 
                 <div class="flex flex-col gap-4 max-w-2xl bg-slate-50 p-5 rounded-xl border border-slate-200">
@@ -633,8 +647,8 @@
                 </div>
 
                 <div class="flex justify-between items-center pt-4 border-t">
-                    <button onclick="goToOrtho()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium px-5 py-2.5 rounded-lg text-sm transition border border-slate-300">
-                        ← 正投影図に戻る
+                    <button onclick="goToOrthoNail()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium px-5 py-2.5 rounded-lg text-sm transition border border-slate-300">
+                        ← 釘打ち（正投影図）に戻る
                     </button>
                     <button onclick="goToStep9()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-8 py-3 rounded-lg shadow-lg transition flex items-center gap-2 text-base">
                         🎬 シミュレーションへ進む ➔
@@ -646,7 +660,7 @@
             <section id="step9-container" class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 hidden flex flex-col gap-6">
                 <div class="border-b pb-3 flex justify-between items-center">
                     <div>
-                        <h2 class="text-lg font-bold text-amber-900">⑨ 組み立てのシミュレーション</h2>
+                        <h2 class="text-lg font-bold text-amber-900">⑩ 組み立てのシミュレーション</h2>
                         <p class="text-sm text-slate-500">板を組み合わせて、釘を打って、作品ができあがるまでの工程を3Dで見られます。</p>
                     </div>
                     <button onclick="goToStep8()" class="text-sm text-amber-800 hover:underline">← PDF出力に戻る</button>
@@ -866,6 +880,7 @@
         let selectedMesh = null;
 let simMode = false;         // シミュレーション画面（色分けや選択を止める）
 let simSteps = [], simT = 0, simPlaying = false, simSpeed = 1, simStopAt = null, simBase = [], simLast = 0, simHammer = null, simAuto = true;
+let orthoMode = 'parts';   // 正投影図の画面：parts=部品の微調整 / nails=釘の微調整
 let nailMode3D = false;     // 3D画面で「釘を打つモード」か
 let nailMeshes = [];        // 3D画面の釘（赤い球）
 let sharedNailIdx = -1;     // 選択中の釘の番号（釘打ち画面）
@@ -1098,8 +1113,9 @@ let viewApi = null;   // 3D画面の視点操作（ボタンから呼ぶ）
         }
 
         // --- ステップ切替 ---
-        function switchStep(stepNumber) {
+        function switchStep(stepNumber, mode) {
             saveCurrentProject();
+            if(stepNumber === 7) orthoMode = (mode === 'nails') ? 'nails' : 'parts';
 
             document.getElementById('step1-container').classList.add('hidden');
             document.getElementById('step2-container').classList.add('hidden');
@@ -1114,13 +1130,13 @@ let viewApi = null;   // 3D画面の視点操作（ボタンから呼ぶ）
             simPlaying = false;
             simMode = (stepNumber === 9);
 
-            for(let i=1; i<=9; i++) {
+            for(const i of [1,2,3,4,5,6,7,'7n',8,9]) {
                 const ind = document.getElementById(`step${i}-indicator`);
                 if(ind) ind.className = 'p-2 rounded-lg bg-slate-100 text-slate-400 transition cursor-pointer';
             }
 
             document.getElementById(`step${stepNumber}-container`).classList.remove('hidden');
-            const activeInd = document.getElementById(`step${stepNumber}-indicator`);
+            const activeInd = document.getElementById((stepNumber === 7 && orthoMode === 'nails') ? 'step7n-indicator' : `step${stepNumber}-indicator`);
             if(activeInd) activeInd.className = 'p-2 rounded-lg bg-amber-600 text-white transition cursor-pointer';
 
             if(stepNumber === 1) {
@@ -1171,7 +1187,8 @@ let viewApi = null;   // 3D画面の視点操作（ボタンから呼ぶ）
 
         function goToStep3() { switchStep(3); }
         function goToAssembly() { switchStep(5); }
-        function goToOrtho() { switchStep(7); }
+        function goToOrtho() { switchStep(7, 'parts'); }
+        function goToOrthoNail() { switchStep(7, 'nails'); }
         function goToNail() { switchStep(6); }
         function goToStep8() { switchStep(8); }
         function goToStep9() { switchStep(9); }
@@ -2380,6 +2397,46 @@ let viewApi = null;   // 3D画面の視点操作（ボタンから呼ぶ）
 
         const NAIL_DEFAULT_LEN = 30;
 
+        // 釘が打ち込まれる先の板の「厚さ」の真ん中（板の半分）に、釘の位置を自動で合わせる
+        // 例：厚さ12mmの板に打つなら、板の端から6mmの位置
+        function centerNailOnTarget(project, n) {
+            const parts = project.assemblyParts || [];
+            const d = parts[n.part];
+            if(!d) return false;
+            const pos = nailWorldPos(n, d);
+            const L = n.len || NAIL_DEFAULT_LEN;
+            const dir = { x: n.axis === 'x' ? -n.sign : 0, y: n.axis === 'y' ? -n.sign : 0, z: n.axis === 'z' ? -n.sign : 0 };
+            let target = null;
+            for(let t = 1; t <= L && !target; t += 1) {
+                const q = { x: pos.x + dir.x * t, y: pos.y + dir.y * t, z: pos.z + dir.z * t };
+                parts.forEach((o, oi) => {
+                    if(target || oi === n.part) return;
+                    const B = partBox(o), e = 0.01;
+                    if(q.x >= B.x0 - e && q.x <= B.x1 + e && q.y >= B.y0 - e && q.y <= B.y1 + e && q.z >= B.z0 - e && q.z <= B.z1 + e) target = B;
+                });
+            }
+            if(!target) return false;
+            // 釘の向き以外の2方向のうち、打ち込む先の板が薄い方（＝厚さの方向）を選ぶ
+            const lat = ['x', 'y', 'z'].filter(a => a !== n.axis);
+            const ext = a => ({ lo: target[a + '0'], hi: target[a + '1'] });
+            lat.sort((a, b) => (ext(a).hi - ext(a).lo) - (ext(b).hi - ext(b).lo));
+            const a = lat[0], e2 = ext(a), cur = pos[a];
+            if(cur < e2.lo - 0.01 || cur > e2.hi + 0.01) return false;
+            const own = partBox(d);
+            n['d' + a] = snapHalf((e2.lo + e2.hi) / 2) - own[a + '0'];
+            clampNail(n, d);
+            return true;
+        }
+
+        function centerSelectedNail() {
+            const project = getCurrentProject();
+            const n = project && project.nails && project.nails[sharedNailIdx];
+            if(!n) { showAlert('位置を合わせる釘を、一覧から選んでください。'); return; }
+            if(!centerNailOnTarget(project, n)) { showAlert('この釘は、他の板に打ち込まれていないため、自動で合わせられません。'); return; }
+            saveCurrentProject();
+            afterNailChange();
+        }
+
         function getNailLen() {
             const v = Number((document.getElementById('nail-length-input') || {}).value);
             return v > 0 ? v : null;
@@ -2464,6 +2521,7 @@ let viewApi = null;   // 3D画面の視点操作（ボタンから呼ぶ）
             };
             clampNail(n, d);
             surfaceNail(n, d);
+            centerNailOnTarget(project, n);   // 打ち込む先の板の厚さの半分に自動で合わせる
             if(!project.nails) project.nails = [];
             project.nails.push(n);
             sharedNailIdx = project.nails.length - 1;
@@ -2592,7 +2650,7 @@ let viewApi = null;   // 3D画面の視点操作（ボタンから呼ぶ）
 
             document.getElementById('pdf-modal-comment-display').textContent = project.comment || '（コメント未入力）';
             document.getElementById('pdf-project-title').textContent = project.title || '';
-            renderOrthoPage(project);
+            renderOrthoSheet(project);
             updatePdfCreatedAt();
 
             const partsTbody = document.getElementById('pdf-modal-parts-tbody');
@@ -2854,7 +2912,21 @@ let viewApi = null;   // 3D画面の視点操作（ボタンから呼ぶ）
             });
             document.getElementById('ortho-nail-name').textContent = sharedNailIdx >= 0 ? `選択中の釘: ${sharedNailIdx + 1}番` : '選択中の釘: なし';
 
-            renderOrthoPage(project, 'ortho-edit-svg', { interactive: true, sel: sharedSelIdx, selNail: sharedNailIdx, footer: false });
+            const nm2 = orthoMode === 'nails';
+            const show = (id, on) => { const e = document.getElementById(id); if(e) e.style.display = on ? '' : 'none'; };
+            show('ortho-part-panel', !nm2); show('ortho-nail-panel', nm2);
+            document.getElementById('ortho-title').textContent = nm2 ? '⑧ 釘打ち（正投影図）：釘の位置の微調整' : '⑥ 第三角法による正投影図：部品の位置の微調整';
+            document.getElementById('ortho-desc').textContent = nm2
+                ? '3Dで打った釘の位置を、正投影図を見ながら微調整します。動かした結果は3Dの釘にも反映されます。'
+                : '3D組立で組み立てた作品の正投影図です。部品を選んで位置を微調整すると、3D組立にも反映されます。';
+            document.getElementById('ortho-tip').textContent = nm2
+                ? '💡 図の中の釘の頭をクリックするか、一覧から釘を選びます。'
+                : '💡 図の部品をクリックするか、一覧から選びます。動かした結果は3D組立とつながっています。';
+            const hb = document.getElementById('ortho-head-back'), fb = document.getElementById('ortho-foot-back'), fn = document.getElementById('ortho-foot-next');
+            hb.onclick = nm2 ? goToNail : goToAssembly; hb.textContent = nm2 ? '← 釘打ち（3D）に戻る' : '← 3D組立に戻る';
+            fb.onclick = nm2 ? goToNail : goToAssembly; fb.textContent = nm2 ? '← 釘打ち（3D）に戻る' : '← 3D組立に戻る';
+            fn.onclick = nm2 ? goToStep8 : goToNail; fn.textContent = nm2 ? '📄 PDF出力画面へ進む ➔' : '🔨 釘打ち（3D）へ進む ➔';
+            renderOrthoPage(project, 'ortho-edit-svg', { interactive: true, sel: nm2 ? -1 : sharedSelIdx, selNail: sharedNailIdx, footer: false, noNails: !nm2, nailsOnly: nm2 });
         }
 
         function selectNail(i) {
@@ -3429,16 +3501,33 @@ let viewApi = null;   // 3D画面の視点操作（ボタンから呼ぶ）
 
         const snapHalf = v => Math.round(v * 2) / 2;
 
+        // PDFの2ページ目：左半分は釘なし、右半分は釘ありの正投影図
+        function renderOrthoSheet(project) {
+            const svg = document.getElementById('pdf-ortho-svg');
+            if(!svg) return;
+            if(!(project.assemblyParts && project.assemblyParts.length > 0)) { renderOrthoPage(project); return; }
+            renderOrthoPage(project, 'pdf-ortho-svg', { frameOnly: true });
+            svg.insertAdjacentHTML('beforeend',
+                '<svg id="pdf-ortho-left" x="0" y="0" width="630" height="890" viewBox="0 0 630 890"></svg>' +
+                '<svg id="pdf-ortho-right" x="630" y="0" width="630" height="890" viewBox="0 0 630 890"></svg>' +
+                '<line x1="630" y1="62" x2="630" y2="846" stroke="#9ca3af" stroke-width="1" stroke-dasharray="6,4"/>');
+            renderOrthoPage(project, 'pdf-ortho-left', { W: 630, bare: true, footer: false, noNails: true, halfLabel: '【釘なし】' });
+            renderOrthoPage(project, 'pdf-ortho-right', { W: 630, bare: true, footer: false, halfLabel: '【釘あり】（寸法は部品の左端・下端から）' });
+            updatePdfCreatedAt();
+        }
+
         function renderOrthoPage(project, svgId = 'pdf-ortho-svg', opts = {}) {
             const svg = document.getElementById(svgId);
             if(!svg) return;
-            const W = 1260, H = 890, INK = '#1f2937';
+            const W = opts.W || 1260, H = 890, INK = '#1f2937';
 
             let out = '';
             out += `<rect x="0" y="0" width="${W}" height="${H}" fill="#ffffff"/>`;
             out += `<text x="24" y="38" font-size="24" font-weight="bold" fill="${INK}">${escHtml(project.title || '')}</text>`;
             out += `<line x1="20" y1="50" x2="${W - 20}" y2="50" stroke="${INK}" stroke-width="2"/>`;
             out += `<text x="24" y="76" font-size="16" font-weight="bold" fill="${INK}">第三角法による正投影図</text>`;
+            // PDF 2ページ目の半分（左：釘なし／右：釘あり）：外枠は別に描くので、図だけを描く
+            if(opts.bare) out = opts.halfLabel ? `<text x="${W - 24}" y="76" font-size="15" font-weight="bold" fill="${INK}" text-anchor="end">${opts.halfLabel}</text>` : '';
 
             // 下の欄：作成日・名前・単位
             const footer = () => opts.footer === false ? '' : `
@@ -3447,6 +3536,8 @@ let viewApi = null;   // 3D画面の視点操作（ボタンから呼ぶ）
                 <text x="760" y="876" font-size="13" font-weight="bold" fill="${INK}">名前:</text>
                 <rect x="805" y="858" width="235" height="28" fill="none" stroke="${INK}" stroke-width="1"/>
                 <text x="${W - 24}" y="876" font-size="13" fill="${INK}" text-anchor="end">単位：mm　／　第三角法</text>`;
+
+            if(opts.frameOnly) { svg.innerHTML = out + footer(); updatePdfCreatedAt(); return; }
 
             const parts = project.assemblyParts || [];
             if(parts.length === 0) {
@@ -3476,8 +3567,12 @@ let viewApi = null;   // 3D画面の視点操作（ボタンから呼ぶ）
             };
 
             // 配置と拡大率（枠に収まる範囲でできるだけ大きく）
-            const M_L = 108, gapX = 64, gapY = 56, M_B = 96;
-            const xA0 = 30 + M_L, xA1 = W - 30;
+            normalizeNails(project);
+            const nailsPre = opts.noNails ? [] : (project.nails || []);
+            const hasN = nailsPre.length > 0, hasFR = nailsPre.some(n => n.view !== 'top'), hasF = nailsPre.some(n => n.view === 'front');
+            // 釘の寸法を図の外に書くための余白
+            const M_L = 108, gapX = hasF ? 104 : 64, gapY = hasN ? 92 : 56, M_B = hasFR ? 130 : 96;
+            const xA0 = 30 + M_L, xA1 = W - 30 - (hasN ? 44 : 0);
             const yA0 = 84 + 28, yA1 = 846 - M_B;
             const s = Math.min((xA1 - xA0 - gapX) / (Wx + Dz), (yA1 - yA0 - gapY) / (Hy + Dz), 10);
             const Wd = Wx * s + gapX + Dz * s, Hd = Dz * s + gapY + Hy * s;
@@ -3549,9 +3644,28 @@ let viewApi = null;   // 3D画面の視点操作（ボタンから呼ぶ）
                     [[fx0 - 3, fY(ys[0]), laneL2 - 4, fY(ys[0])], [fx0 - 3, fY(ys[ys.length - 1]), laneL2 - 4, fY(ys[ys.length - 1])]], [-14, 16]);
             }
 
+            // 平面図（上から見た図）：奥行き（Z）は図の左、全体の幅（X）は図の下
+            const tY = views[1].my;   // 平面図は、手前（+Z）が下
+            const zTop = (z) => tY(-z);
+            for(let i = 0; i < zs.length - 1; i++) {
+                const ya = zTop(zs[i + 1]), yb = zTop(zs[i]);
+                dimSvg += tools.dimV(laneL1, ya, yb, zs[i + 1] - zs[i],
+                    [[fx0 - 3, ya, laneL1 - 4, ya], [fx0 - 3, yb, laneL1 - 4, yb]], [-14, 16]);
+            }
+            if(zs.length > 2) {
+                const ya = zTop(zs[zs.length - 1]), yb = zTop(zs[0]);
+                dimSvg += tools.dimV(laneL2, ya, yb, Dz,
+                    [[fx0 - 3, ya, laneL2 - 4, ya], [fx0 - 3, yb, laneL2 - 4, yb]], [-14, 16]);
+            }
+            {
+                const yb = ty0 + Dz * s, laneT = yb + (hasN ? 58 : 26);
+                dimSvg += tools.dimH(laneT, fX(xs[0]), fX(xs[xs.length - 1]), Wx,
+                    [[fX(xs[0]), yb + 3, fX(xs[0]), laneT + 4], [fX(xs[xs.length - 1]), yb + 3, fX(xs[xs.length - 1]), laneT + 4]], [-12, 14, -26]);
+            }
+
             // 微調整画面：図の部品をクリックして選べるようにする（選択中は色を付ける）
             let hitSvg = '';
-            if(opts.interactive) {
+            if(opts.interactive && !opts.nailsOnly) {
                 views.forEach(v => {
                     rectsOf[v.key].forEach((r, i) => {
                         const sel = (opts.sel === i);
@@ -3566,7 +3680,7 @@ let viewApi = null;   // 3D画面の視点操作（ボタンから呼ぶ）
 
             // 釘打ちの位置（赤丸）。3つの図すべてに点を描き、寸法は打ったときの図にだけ書く
             normalizeNails(project);
-            const nails = project.nails || [];
+            const nails = opts.noNails ? [] : (project.nails || []);
             let nailSvg = '', nailDots = '';
             nails.forEach((n, ni) => {
                 const B = boxes[n.part];
@@ -3596,13 +3710,36 @@ let viewApi = null;   // 3D画面の視点操作（ボタンから呼ぶ）
                     if(opts.interactive) nailDots += `<circle cx="${px}" cy="${py}" r="${hr + 5}" fill="rgba(255,255,255,0.01)" style="cursor:pointer" onclick="event.stopPropagation();selectNail(${ni})"/>`;
                     if(v.key === n.view && n.len) nailDots += `<text x="${px + hr + 4}" y="${py - 7}" font-size="12" font-weight="bold" fill="#111827" stroke="#ffffff" stroke-width="3" paint-order="stroke">釘${n.len}</text>`;
                 });
-                const v = views.find(q => q.key === n.view), r = rectsOf[n.view][n.part];
-                if(v && r) {
-                    const nx = v.mx(uv[n.view][0]), ny = v.my(uv[n.view][1]);
-                    nailSvg += tools.dimH(ny, v.mx(r.u0), nx, uv[n.view][0] - r.u0, [], [-12, 14, -26]);
-                    nailSvg += tools.dimV(nx, ny, v.my(r.v0), uv[n.view][1] - r.v0, [], [-12, 14, -26]);
-                }
             });
+
+            // 釘の位置の寸法（JIS：図の外に寸法線を引き、釘の中心から寸法補助線を出す。連続寸法・数値のみ）
+            const nailChain = (key) => {
+                const v = views.find(q => q.key === key);
+                const list = nails.filter(n => key === 'top' || n.view === key);
+                if(!v || list.length === 0) return '';
+                const pts = list.map(n => {
+                    const B = boxes[n.part];
+                    const P = { x: B.x0 + n.dx, y: B.y0 + n.dy, z: B.z0 + n.dz };
+                    return { front: [P.x, P.y], top: [P.x, -P.z], right: [-P.z, P.y] }[key];
+                });
+                const rg = { front: { u: [ext.x0, ext.x1], v: [ext.y0, ext.y1] }, top: { u: [ext.x0, ext.x1], v: [-ext.z1, -ext.z0] }, right: { u: [-ext.z1, -ext.z0], v: [ext.y0, ext.y1] } }[key];
+                const us = uniq([...rg.u, ...pts.map(q => q[0])]), vs = uniq([...rg.v, ...pts.map(q => q[1])]);
+                const hr = Math.max(4, 3 * s) + 3;
+                const bottomY = v.my(rg.v[0]), rightX = v.mx(rg.u[1]);
+                const laneY = key === 'top' ? bottomY + 24 : fyBottom + 102, laneX = rightX + 36;
+                const near = (a, b) => Math.abs(a - b) < 0.005;
+                let g = '';
+                for(let i = 0; i < us.length - 1; i++) {
+                    const ex = (u) => { const q = pts.find(t => near(t[0], u)); const y0 = (q && !near(u, rg.u[0]) && !near(u, rg.u[1])) ? v.my(q[1]) + hr : bottomY + 3; return [v.mx(u), y0, v.mx(u), laneY + 4]; };
+                    g += tools.dimH(laneY, v.mx(us[i]), v.mx(us[i + 1]), us[i + 1] - us[i], [ex(us[i]), ex(us[i + 1])], [-14, -28, 16]);
+                }
+                for(let i = 0; i < vs.length - 1; i++) {
+                    const ex = (u) => { const q = pts.find(t => near(t[1], u)); const x0 = (q && !near(u, rg.v[0]) && !near(u, rg.v[1])) ? v.mx(q[0]) + hr : rightX + 3; return [x0, v.my(u), laneX + 4, v.my(u)]; };
+                    g += tools.dimV(laneX, v.my(vs[i]), v.my(vs[i + 1]), vs[i + 1] - vs[i], [ex(vs[i]), ex(vs[i + 1])], [-14, -28, 16]);
+                }
+                return g;
+            };
+            ['top', 'front', 'right'].forEach(k => { nailSvg += nailChain(k); });
             nailSvg += nailDots;
             if(nails.length > 0 && opts.footer !== false) {
                 out += `<circle cx="${W - 322}" cy="71" r="5.5" fill="#9ca3af" stroke="#111827" stroke-width="1.3"/><text x="${W - 24}" y="76" font-size="13" fill="${INK}" text-anchor="end">釘打ち位置（寸法は部品の左端・下端から）</text>`;
