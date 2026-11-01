@@ -68,13 +68,16 @@
             </div>
 
             <!-- ステップナビゲーション -->
-            <div class="grid grid-cols-2 sm:grid-cols-6 gap-2 bg-white p-3 rounded-2xl shadow-sm border border-slate-200 text-center text-xs font-bold">
+            <div class="grid grid-cols-2 sm:grid-cols-9 gap-2 bg-white p-3 rounded-2xl shadow-sm border border-slate-200 text-center text-xs font-bold">
                 <div onclick="switchStep(1)" id="step1-indicator" class="p-2 rounded-lg bg-amber-600 text-white transition cursor-pointer">① 板材の設定</div>
                 <div onclick="switchStep(2)" id="step2-indicator" class="p-2 rounded-lg bg-slate-100 text-slate-400 transition cursor-pointer">② けがき・切断</div>
                 <div onclick="switchStep(3)" id="step3-indicator" class="p-2 rounded-lg bg-slate-100 text-slate-400 transition cursor-pointer">③ 部品名・不要パーツ</div>
                 <div onclick="switchStep(4)" id="step4-indicator" class="p-2 rounded-lg bg-slate-100 text-slate-400 transition cursor-pointer">④ 材料取図一覧</div>
                 <div onclick="switchStep(5)" id="step5-indicator" class="p-2 rounded-lg bg-slate-100 text-slate-400 transition cursor-pointer">⑤ 3D組立</div>
-                <div onclick="switchStep(6)" id="step6-indicator" class="p-2 rounded-lg bg-slate-100 text-slate-400 transition cursor-pointer">⑥ PDF出力</div>
+                <div onclick="switchStep(6)" id="step6-indicator" class="p-2 rounded-lg bg-slate-100 text-slate-400 transition cursor-pointer">⑥ 釘打ち</div>
+                <div onclick="switchStep(7)" id="step7-indicator" class="p-2 rounded-lg bg-slate-100 text-slate-400 transition cursor-pointer">⑦ 正投影図</div>
+                <div onclick="switchStep(8)" id="step8-indicator" class="p-2 rounded-lg bg-slate-100 text-slate-400 transition cursor-pointer">⑧ PDF出力</div>
+                <div onclick="switchStep(9)" id="step9-indicator" class="p-2 rounded-lg bg-slate-100 text-slate-400 transition cursor-pointer">⑨ シミュレーション</div>
             </div>
 
             <!-- ステップ①：板材の設定 (名称・長さ・幅・厚さ) -->
@@ -348,6 +351,13 @@
                                 </div>
                             </div>
 
+                            <div class="flex flex-col gap-1.5 border-t pt-3">
+                                <label class="text-xs font-semibold text-slate-600">🔨 釘打ち:</label>
+                                <button id="nail-mode-btn" onclick="toggleNailMode3D()" class="text-xs font-bold py-1.5 rounded border transition bg-white text-slate-700 border-slate-300 hover:bg-red-50">🔨 釘を打つモード：オフ</button>
+                                <input type="number" id="nail-length-input-3d" min="1" placeholder="釘の長さ (mm・任意)" oninput="document.getElementById('nail-length-input').value=this.value" class="w-full p-1.5 bg-white border border-slate-300 rounded text-xs">
+                                <button onclick="undoLastNail()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs py-1.5 rounded border border-slate-300">直前の釘を消す</button>
+                            </div>
+
                             <button onclick="removeSelectedPartFromScene()" class="bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-medium py-1.5 rounded border border-rose-200 transition">
                                 シーンから外す
                             </button>
@@ -355,7 +365,7 @@
 
                         <div class="border-t pt-2">
                             <span class="text-[10px] text-slate-500 leading-tight block">
-                                💡 <b>操作</b>: パーツクリックで選択 / ドラッグで画面を移動 / ホイールでポインタ位置を中心に拡大・縮小 / 見る角度は右上のボタンで変更
+                                💡 <b>操作</b>: パーツクリックで選択 / 左ドラッグで画面を移動 / 右ドラッグで回転 / ホイールでポインタ位置を中心に拡大・縮小 / 見る角度は右上のボタンでも変更
                             </span>
                         </div>
                     </div>
@@ -415,20 +425,200 @@
                     <button onclick="backToStep4()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium px-5 py-2.5 rounded-lg text-sm transition border border-slate-300">
                         ← 材料取図一覧に戻る
                     </button>
-                    <button onclick="goToStep6()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-8 py-3 rounded-lg shadow-lg transition flex items-center gap-2 text-base">
+                    <button onclick="goToNail()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-8 py-3 rounded-lg shadow-lg transition flex items-center gap-2 text-base">
+                        🔨 釘打ちへ進む ➔
+                    </button>
+                </div>
+            </section>
+
+            <!-- ステップ⑦：正投影図（3D組立とリンクして微調整） -->
+            <section id="step7-container" class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 hidden flex flex-col gap-6">
+                <div class="border-b pb-3 flex justify-between items-center">
+                    <div>
+                        <h2 class="text-lg font-bold text-amber-900">⑦ 第三角法による正投影図（部品・釘の微調整）</h2>
+                        <p class="text-sm text-slate-500">3D組立で組み立てた作品の正投影図です。部品や釘を選んで位置を微調整すると、3D組立・釘打ちにも反映されます。</p>
+                    </div>
+                    <button onclick="goToNail()" class="text-sm text-amber-800 hover:underline">← 釘打ちに戻る</button>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-col gap-4 lg:col-span-1">
+                        <h3 class="font-bold text-sm text-slate-700 border-b pb-2">🛠️ 部品を選ぶ</h3>
+                        <div id="ortho-parts-list" class="flex flex-col gap-1.5 max-h-[200px] overflow-y-auto"></div>
+
+                        <div class="border-t pt-3 flex flex-col gap-3">
+                            <h3 class="font-bold text-sm text-amber-900" id="ortho-selected-name">選択中の部品: なし</h3>
+
+                            <div class="flex flex-col gap-1">
+                                <label class="text-xs font-semibold text-slate-600">1回に動かす量 (mm):</label>
+                                <div class="grid grid-cols-4 gap-1" id="ortho-step-buttons">
+                                    <button onclick="setOrthoStep(0.5)" data-step="0.5" class="ortho-step bg-white border text-xs py-1.5 rounded font-bold">0.5</button>
+                                    <button onclick="setOrthoStep(1)" data-step="1" class="ortho-step bg-white border text-xs py-1.5 rounded font-bold">1</button>
+                                    <button onclick="setOrthoStep(5)" data-step="5" class="ortho-step bg-white border text-xs py-1.5 rounded font-bold">5</button>
+                                    <button onclick="setOrthoStep(10)" data-step="10" class="ortho-step bg-white border text-xs py-1.5 rounded font-bold">10</button>
+                                </div>
+                            </div>
+
+                            <div class="flex flex-col gap-1">
+                                <label class="text-xs font-semibold text-slate-600">部品の位置を動かす:</label>
+                                <div class="grid grid-cols-3 gap-1 text-xs">
+                                    <button onclick="moveOrthoPart('z', -1)" class="bg-blue-50 border border-blue-200 hover:bg-blue-100 py-1.5 rounded font-bold text-blue-700">奥へ</button>
+                                    <button onclick="moveOrthoPart('y', 1)" class="bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 py-1.5 rounded font-bold text-emerald-700">▲ 上へ</button>
+                                    <button onclick="moveOrthoPart('z', 1)" class="bg-blue-50 border border-blue-200 hover:bg-blue-100 py-1.5 rounded font-bold text-blue-700">手前へ</button>
+                                    <button onclick="moveOrthoPart('x', -1)" class="bg-red-50 border border-red-200 hover:bg-red-100 py-1.5 rounded font-bold text-red-700">◀ 左へ</button>
+                                    <button onclick="moveOrthoPart('y', -1)" class="bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 py-1.5 rounded font-bold text-emerald-700">▼ 下へ</button>
+                                    <button onclick="moveOrthoPart('x', 1)" class="bg-red-50 border border-red-200 hover:bg-red-100 py-1.5 rounded font-bold text-red-700">右へ ▶</button>
+                                </div>
+                                <span class="text-[10px] text-slate-500">奥・手前は、正面図の見る向きで決まります。</span>
+                            </div>
+
+                            <div class="flex flex-col gap-1.5">
+                                <label class="text-xs font-semibold text-slate-600">回転 (90°):</label>
+                                <div class="grid grid-cols-3 gap-1">
+                                    <button onclick="rotateOrthoPart('x', 90)" class="bg-white border hover:bg-amber-50 text-xs py-1.5 rounded font-medium text-slate-700">X +90°</button>
+                                    <button onclick="rotateOrthoPart('y', 90)" class="bg-white border hover:bg-amber-50 text-xs py-1.5 rounded font-medium text-slate-700">Y +90°</button>
+                                    <button onclick="rotateOrthoPart('z', 90)" class="bg-white border hover:bg-amber-50 text-xs py-1.5 rounded font-medium text-slate-700">Z +90°</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="border-t pt-3 flex flex-col gap-2">
+                            <h3 class="font-bold text-sm text-amber-900" id="ortho-nail-name">選択中の釘: なし</h3>
+                            <div id="ortho-nail-list" class="flex flex-col gap-1.5 max-h-[120px] overflow-y-auto"></div>
+                            <div class="grid grid-cols-3 gap-1 text-xs">
+                                <button onclick="moveNail('z', -1)" class="bg-blue-50 border border-blue-200 hover:bg-blue-100 py-1.5 rounded font-bold text-blue-700">奥へ</button>
+                                <button onclick="moveNail('y', 1)" class="bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 py-1.5 rounded font-bold text-emerald-700">▲ 上へ</button>
+                                <button onclick="moveNail('z', 1)" class="bg-blue-50 border border-blue-200 hover:bg-blue-100 py-1.5 rounded font-bold text-blue-700">手前へ</button>
+                                <button onclick="moveNail('x', -1)" class="bg-red-50 border border-red-200 hover:bg-red-100 py-1.5 rounded font-bold text-red-700">◀ 左へ</button>
+                                <button onclick="moveNail('y', -1)" class="bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 py-1.5 rounded font-bold text-emerald-700">▼ 下へ</button>
+                                <button onclick="moveNail('x', 1)" class="bg-red-50 border border-red-200 hover:bg-red-100 py-1.5 rounded font-bold text-red-700">右へ ▶</button>
+                            </div>
+                            <span class="text-[10px] text-slate-500">釘は、打った部品の面の上で動きます（動かす量は上の0.5〜10mm）。</span>
+                        </div>
+
+                        <div class="border-t pt-2">
+                            <span class="text-[10px] text-slate-500 leading-tight block">
+                                💡 図の部品や釘（図の中の釘の頭）をクリックするか、一覧から選びます。動かした結果は3D組立・釘打ちとつながっています。
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="bg-white border border-slate-300 rounded-xl p-2 lg:col-span-3 overflow-auto">
+                        <svg id="ortho-edit-svg" class="w-full h-auto block" viewBox="0 0 1260 890" font-family="'Noto Sans JP', 'Inter', sans-serif"></svg>
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-center pt-4 border-t">
+                    <button onclick="goToNail()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium px-5 py-2.5 rounded-lg text-sm transition border border-slate-300">
+                        ← 釘打ちに戻る
+                    </button>
+                    <button onclick="goToStep8()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-8 py-3 rounded-lg shadow-lg transition flex items-center gap-2 text-base">
                         📄 PDF出力画面へ進む ➔
                     </button>
                 </div>
             </section>
 
-            <!-- ステップ⑥：PDF出力・コメント・レイアウト確認 -->
+            <!-- ステップ⑥：釘打ち -->
             <section id="step6-container" class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 hidden flex flex-col gap-6">
                 <div class="border-b pb-3 flex justify-between items-center">
                     <div>
-                        <h2 class="text-lg font-bold text-amber-900">⑥ PDF出力・コメント入力</h2>
-                        <p class="text-sm text-slate-500">製作レポート用のコメントを入力し、レイアウト（1ページ目：構想図・部品表・材料取り図、2ページ目：第三角法の正投影図）を確認してPDFとして保存できます。</p>
+                        <h2 class="text-lg font-bold text-amber-900">⑥ 釘打ちの位置</h2>
+                        <p class="text-sm text-slate-500">3D図を好きな向きに回して、打ちたい面の部品をクリックすると、その場所に釘を打ち込みます。打った釘は、正投影図とPDFにも載ります。</p>
                     </div>
                     <button onclick="goToAssembly()" class="text-sm text-amber-800 hover:underline">← 3D組立に戻る</button>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-col gap-4 lg:col-span-1">
+                        <h3 class="font-bold text-sm text-slate-700 border-b pb-2">🔨 打つ位置を決める</h3>
+                        <div class="flex flex-col gap-1">
+                            <label class="text-xs font-semibold text-slate-600">釘の長さ (mm・任意):</label>
+                            <input type="number" id="nail-length-input" min="1" placeholder="例: 38" oninput="var e=document.getElementById('nail-length-input-3d'); if(e) e.value=this.value" class="w-full p-2 bg-white border border-slate-300 rounded-lg text-sm">
+                            <span class="text-[10px] text-slate-500">入れた長さの釘を打ち込みます（空欄のときは30mm）。図には「釘38」のように表示します。</span>
+                        </div>
+                        <div class="border-t pt-3 flex flex-col gap-2">
+                            <h3 class="font-bold text-sm text-amber-900" id="nail-selected-name">選択中の釘: なし</h3>
+                            <label class="text-xs font-semibold text-slate-600">1回に動かす量 (mm):</label>
+                            <div class="grid grid-cols-4 gap-1">
+                                <button onclick="setNailStep(0.5)" data-step="0.5" class="ortho-step bg-white border text-xs py-1.5 rounded font-bold">0.5</button>
+                                <button onclick="setNailStep(1)" data-step="1" class="ortho-step bg-white border text-xs py-1.5 rounded font-bold">1</button>
+                                <button onclick="setNailStep(5)" data-step="5" class="ortho-step bg-white border text-xs py-1.5 rounded font-bold">5</button>
+                                <button onclick="setNailStep(10)" data-step="10" class="ortho-step bg-white border text-xs py-1.5 rounded font-bold">10</button>
+                            </div>
+                            <div class="grid grid-cols-3 gap-1 text-xs">
+                                <button onclick="moveNail('z', -1)" class="bg-blue-50 border border-blue-200 hover:bg-blue-100 py-1.5 rounded font-bold text-blue-700">奥へ</button>
+                                <button onclick="moveNail('y', 1)" class="bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 py-1.5 rounded font-bold text-emerald-700">▲ 上へ</button>
+                                <button onclick="moveNail('z', 1)" class="bg-blue-50 border border-blue-200 hover:bg-blue-100 py-1.5 rounded font-bold text-blue-700">手前へ</button>
+                                <button onclick="moveNail('x', -1)" class="bg-red-50 border border-red-200 hover:bg-red-100 py-1.5 rounded font-bold text-red-700">◀ 左へ</button>
+                                <button onclick="moveNail('y', -1)" class="bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 py-1.5 rounded font-bold text-emerald-700">▼ 下へ</button>
+                                <button onclick="moveNail('x', 1)" class="bg-red-50 border border-red-200 hover:bg-red-100 py-1.5 rounded font-bold text-red-700">右へ ▶</button>
+                            </div>
+                            <span class="text-[10px] text-slate-500">釘は、打った部品の中で動かせます。</span>
+                        </div>
+                        <div class="border-t pt-3 flex flex-col gap-2">
+                            <h3 class="font-bold text-sm text-amber-900">打った釘の一覧</h3>
+                            <div id="nail-list" class="flex flex-col gap-1.5 max-h-[260px] overflow-y-auto"></div>
+                            <button onclick="clearNails()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-medium py-2 rounded-xl">すべて消す</button>
+                        </div>
+                        <div class="border-t pt-2">
+                            <span class="text-[10px] text-slate-500 leading-tight block">
+                                💡 打ちたい面が見える向きに3D図を回してから、部品をクリックします。釘は、クリックした面に垂直に打ち込まれます。
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-900 rounded-xl p-2 flex flex-col items-center justify-center min-h-[500px] relative overflow-hidden lg:col-span-3">
+                        <div id="nail-canvas-container" class="w-full h-[500px] rounded-lg overflow-hidden cursor-crosshair"></div>
+                        <div class="absolute top-4 right-4 z-10 flex flex-col gap-2 bg-slate-800/90 border border-slate-700 rounded-lg p-2 shadow-md w-[148px]">
+                            <span class="text-[11px] font-bold text-amber-400">🎥 見る向き</span>
+                            <div class="grid grid-cols-3 gap-1">
+                                <button onclick="setStandardView('iso')" class="bg-slate-700 hover:bg-amber-600 text-white text-[11px] py-1.5 rounded font-medium" title="等角（画像出力と同じ向き）">等角</button>
+                                <button onclick="setStandardView('front')" class="bg-slate-700 hover:bg-amber-600 text-white text-[11px] py-1.5 rounded font-medium">正面</button>
+                                <button onclick="setStandardView('back')" class="bg-slate-700 hover:bg-amber-600 text-white text-[11px] py-1.5 rounded font-medium">背面</button>
+                                <button onclick="setStandardView('left')" class="bg-slate-700 hover:bg-amber-600 text-white text-[11px] py-1.5 rounded font-medium">左</button>
+                                <button onclick="setStandardView('right')" class="bg-slate-700 hover:bg-amber-600 text-white text-[11px] py-1.5 rounded font-medium">右</button>
+                                <button onclick="fitAllView()" class="bg-emerald-700 hover:bg-emerald-600 text-white text-[11px] py-1.5 rounded font-medium" title="全部の部品が見えるように合わせる">全体</button>
+                                <button onclick="setStandardView('top')" class="bg-slate-700 hover:bg-amber-600 text-white text-[11px] py-1.5 rounded font-medium">上</button>
+                                <button onclick="setStandardView('bottom')" class="bg-slate-700 hover:bg-amber-600 text-white text-[11px] py-1.5 rounded font-medium">下</button>
+                            </div>
+                            <span class="text-[11px] font-bold text-amber-400">🔄 回して見る</span>
+                            <div class="grid grid-cols-3 gap-1">
+                                <button onclick="rotateView(90, 0)" class="bg-slate-700 hover:bg-amber-600 text-white text-[11px] py-1.5 rounded font-medium" title="左へ90°回す">⟲90°</button>
+                                <button onclick="rotateView(0, -15)" class="bg-slate-700 hover:bg-amber-600 text-white text-sm py-1 rounded font-bold" title="もっと上から見る">▲</button>
+                                <button onclick="rotateView(-90, 0)" class="bg-slate-700 hover:bg-amber-600 text-white text-[11px] py-1.5 rounded font-medium" title="右へ90°回す">⟳90°</button>
+                                <button onclick="rotateView(15, 0)" class="bg-slate-700 hover:bg-amber-600 text-white text-sm py-1 rounded font-bold" title="左へ回す">◀</button>
+                                <span></span>
+                                <button onclick="rotateView(-15, 0)" class="bg-slate-700 hover:bg-amber-600 text-white text-sm py-1 rounded font-bold" title="右へ回す">▶</button>
+                                <span></span>
+                                <button onclick="rotateView(0, 15)" class="bg-slate-700 hover:bg-amber-600 text-white text-sm py-1 rounded font-bold" title="もっと下から見る">▼</button>
+                                <span></span>
+                            </div>
+                        </div>
+
+                        <div class="absolute bottom-3 left-4 text-xs text-slate-300 bg-slate-800/80 px-3 py-1.5 rounded border border-slate-700 pointer-events-none">
+                            部品をクリックすると釘を打ち込みます（左ドラッグ：画面の移動／右ドラッグ・右上のボタン：回転）
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-center pt-4 border-t">
+                    <button onclick="goToAssembly()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium px-5 py-2.5 rounded-lg text-sm transition border border-slate-300">
+                        ← 3D組立に戻る
+                    </button>
+                    <button onclick="goToOrtho()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-8 py-3 rounded-lg shadow-lg transition flex items-center gap-2 text-base">
+                        📐 正投影図へ進む ➔
+                    </button>
+                </div>
+            </section>
+
+            <!-- ステップ⑧：PDF出力・コメント・レイアウト確認 -->
+            <section id="step8-container" class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 hidden flex flex-col gap-6">
+                <div class="border-b pb-3 flex justify-between items-center">
+                    <div>
+                        <h2 class="text-lg font-bold text-amber-900">⑧ PDF出力・コメント入力</h2>
+                        <p class="text-sm text-slate-500">製作レポート用のコメントを入力し、レイアウト（1ページ目：構想図・部品表・材料取り図、2ページ目：第三角法の正投影図）を確認してPDFとして保存できます。</p>
+                    </div>
+                    <button onclick="goToOrtho()" class="text-sm text-amber-800 hover:underline">← 正投影図に戻る</button>
                 </div>
 
                 <div class="flex flex-col gap-4 max-w-2xl bg-slate-50 p-5 rounded-xl border border-slate-200">
@@ -443,11 +633,90 @@
                 </div>
 
                 <div class="flex justify-between items-center pt-4 border-t">
-                    <button onclick="goToAssembly()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium px-5 py-2.5 rounded-lg text-sm transition border border-slate-300">
-                        ← 3D組立に戻る
+                    <button onclick="goToOrtho()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium px-5 py-2.5 rounded-lg text-sm transition border border-slate-300">
+                        ← 正投影図に戻る
+                    </button>
+                    <button onclick="goToStep9()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-8 py-3 rounded-lg shadow-lg transition flex items-center gap-2 text-base">
+                        🎬 シミュレーションへ進む ➔
                     </button>
                 </div>
             </section>
+
+            <!-- ステップ⑨：シミュレーション（組み立てと釘打ちの工程） -->
+            <section id="step9-container" class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 hidden flex flex-col gap-6">
+                <div class="border-b pb-3 flex justify-between items-center">
+                    <div>
+                        <h2 class="text-lg font-bold text-amber-900">⑨ 組み立てのシミュレーション</h2>
+                        <p class="text-sm text-slate-500">板を組み合わせて、釘を打って、作品ができあがるまでの工程を3Dで見られます。</p>
+                    </div>
+                    <button onclick="goToStep8()" class="text-sm text-amber-800 hover:underline">← PDF出力に戻る</button>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-col gap-3 lg:col-span-1">
+                        <h3 class="font-bold text-sm text-slate-700 border-b pb-2">🎬 工程の操作</h3>
+                        <div class="grid grid-cols-2 gap-1.5">
+                            <button onclick="simReset()" class="bg-white border hover:bg-amber-50 text-xs py-2 rounded font-bold text-slate-700">⏮ 最初から</button>
+                            <button id="sim-play-btn" onclick="simToggle()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs py-2 rounded font-bold">▶ 再生</button>
+                            <button onclick="simPrev()" class="bg-white border hover:bg-amber-50 text-xs py-2 rounded font-bold text-slate-700">◀ 前の工程</button>
+                            <button onclick="simNext()" class="bg-white border hover:bg-amber-50 text-xs py-2 rounded font-bold text-slate-700">次の工程 ▶</button>
+                        </div>
+                        <div class="flex items-center gap-2 text-xs">
+                            <label class="font-semibold text-slate-600">速さ:</label>
+                            <select id="sim-speed" onchange="simSpeed = Number(this.value)" class="p-1.5 bg-white border border-slate-300 rounded text-xs">
+                                <option value="0.5">ゆっくり</option>
+                                <option value="1" selected>ふつう</option>
+                                <option value="2">はやい</option>
+                                <option value="4">とてもはやい</option>
+                            </select>
+                            <label class="flex items-center gap-1 ml-auto cursor-pointer"><input type="checkbox" id="sim-auto" checked onchange="simAuto = this.checked"> 自動で回る</label>
+                        </div>
+                        <input type="range" id="sim-slider" min="0" max="100" value="0" oninput="simSetT(Number(this.value) / 100)" class="w-full">
+                        <span id="sim-progress-label" class="text-[11px] text-slate-500">工程 0 / 0</span>
+                        <h3 class="font-bold text-sm text-amber-900 border-t pt-2">工程の一覧（▲▼で順番を変えられます）</h3>
+                        <button onclick="simAutoOrder()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs py-1.5 rounded border border-slate-300">🔀 おすすめの順番にもどす（2枚置く→釘→1枚置く→釘…）</button>
+                        <div id="sim-step-list" class="flex flex-col gap-1 max-h-[260px] overflow-y-auto"></div>
+                    </div>
+
+                    <div class="bg-slate-900 rounded-xl p-2 flex flex-col items-center justify-center min-h-[500px] relative overflow-hidden lg:col-span-3">
+                        <div id="sim-canvas-container" class="w-full h-[500px] rounded-lg overflow-hidden"></div>
+                        <div class="absolute top-4 right-4 z-10 flex flex-col gap-2 bg-slate-800/90 border border-slate-700 rounded-lg p-2 shadow-md w-[148px]">
+                            <span class="text-[11px] font-bold text-amber-400">🎥 見る向き</span>
+                            <div class="grid grid-cols-3 gap-1">
+                                <button onclick="setStandardView('iso')" class="bg-slate-700 hover:bg-amber-600 text-white text-[11px] py-1.5 rounded font-medium" title="等角（画像出力と同じ向き）">等角</button>
+                                <button onclick="setStandardView('front')" class="bg-slate-700 hover:bg-amber-600 text-white text-[11px] py-1.5 rounded font-medium">正面</button>
+                                <button onclick="setStandardView('back')" class="bg-slate-700 hover:bg-amber-600 text-white text-[11px] py-1.5 rounded font-medium">背面</button>
+                                <button onclick="setStandardView('left')" class="bg-slate-700 hover:bg-amber-600 text-white text-[11px] py-1.5 rounded font-medium">左</button>
+                                <button onclick="setStandardView('right')" class="bg-slate-700 hover:bg-amber-600 text-white text-[11px] py-1.5 rounded font-medium">右</button>
+                                <button onclick="fitAllView()" class="bg-emerald-700 hover:bg-emerald-600 text-white text-[11px] py-1.5 rounded font-medium" title="全部の部品が見えるように合わせる">全体</button>
+                                <button onclick="setStandardView('top')" class="bg-slate-700 hover:bg-amber-600 text-white text-[11px] py-1.5 rounded font-medium">上</button>
+                                <button onclick="setStandardView('bottom')" class="bg-slate-700 hover:bg-amber-600 text-white text-[11px] py-1.5 rounded font-medium">下</button>
+                            </div>
+                            <span class="text-[11px] font-bold text-amber-400">🔄 回して見る</span>
+                            <div class="grid grid-cols-3 gap-1">
+                                <button onclick="rotateView(90, 0)" class="bg-slate-700 hover:bg-amber-600 text-white text-[11px] py-1.5 rounded font-medium" title="左へ90°回す">⟲90°</button>
+                                <button onclick="rotateView(0, -15)" class="bg-slate-700 hover:bg-amber-600 text-white text-sm py-1 rounded font-bold" title="もっと上から見る">▲</button>
+                                <button onclick="rotateView(-90, 0)" class="bg-slate-700 hover:bg-amber-600 text-white text-[11px] py-1.5 rounded font-medium" title="右へ90°回す">⟳90°</button>
+                                <button onclick="rotateView(15, 0)" class="bg-slate-700 hover:bg-amber-600 text-white text-sm py-1 rounded font-bold" title="左へ回す">◀</button>
+                                <span></span>
+                                <button onclick="rotateView(-15, 0)" class="bg-slate-700 hover:bg-amber-600 text-white text-sm py-1 rounded font-bold" title="右へ回す">▶</button>
+                                <span></span>
+                                <button onclick="rotateView(0, 15)" class="bg-slate-700 hover:bg-amber-600 text-white text-sm py-1 rounded font-bold" title="もっと下から見る">▼</button>
+                                <span></span>
+                            </div>
+                        </div>
+
+                        <div id="sim-caption" class="absolute bottom-3 left-4 right-44 text-sm font-bold text-amber-100 bg-slate-800/90 px-4 py-2 rounded-lg border border-slate-700 pointer-events-none">工程を再生してください</div>
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-center pt-4 border-t">
+                    <button onclick="goToStep8()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium px-5 py-2.5 rounded-lg text-sm transition border border-slate-300">
+                        ← PDF出力に戻る
+                    </button>
+                </div>
+            </section>
+
         </section>
 
     </main>
@@ -595,6 +864,13 @@
         let scene, camera, renderer, raycaster, mouse;
         let assembledMeshes = [];
         let selectedMesh = null;
+let simMode = false;         // シミュレーション画面（色分けや選択を止める）
+let simSteps = [], simT = 0, simPlaying = false, simSpeed = 1, simStopAt = null, simBase = [], simLast = 0, simHammer = null, simAuto = true;
+let nailMode3D = false;     // 3D画面で「釘を打つモード」か
+let nailMeshes = [];        // 3D画面の釘（赤い球）
+let sharedNailIdx = -1;     // 選択中の釘の番号（釘打ち画面）
+let sharedSelIdx = -1;   // 3D組立と正投影図で共有する、選択中の部品の番号
+let orthoStepMm = 1;
 let viewApi = null;   // 3D画面の視点操作（ボタンから呼ぶ）
 
         // 初期化実行
@@ -831,8 +1107,14 @@ let viewApi = null;   // 3D画面の視点操作（ボタンから呼ぶ）
             document.getElementById('step4-container').classList.add('hidden');
             document.getElementById('step5-container').classList.add('hidden');
             document.getElementById('step6-container').classList.add('hidden');
+            document.getElementById('step7-container').classList.add('hidden');
+            document.getElementById('step8-container').classList.add('hidden');
+            document.getElementById('step9-container').classList.add('hidden');
 
-            for(let i=1; i<=6; i++) {
+            simPlaying = false;
+            simMode = (stepNumber === 9);
+
+            for(let i=1; i<=9; i++) {
                 const ind = document.getElementById(`step${i}-indicator`);
                 if(ind) ind.className = 'p-2 rounded-lg bg-slate-100 text-slate-400 transition cursor-pointer';
             }
@@ -854,10 +1136,22 @@ let viewApi = null;   // 3D画面の視点操作（ボタンから呼ぶ）
                 renderSummaryView();
             } else if(stepNumber === 5) {
                 generateParts();
+                nailMode3D = false;
                 initAssembly3D();
+                syncNailModeBtn();
             } else if(stepNumber === 6) {
                 generateParts();
+                nailMode3D = true;
+                initAssembly3D('nail-canvas-container');
+                renderNailStep();
+            } else if(stepNumber === 7) {
+                renderOrthoStep();
+            } else if(stepNumber === 8) {
+                generateParts();
                 renderPdfStepComment();
+            } else if(stepNumber === 9) {
+                generateParts();
+                initSimulation();
             }
         }
 
@@ -877,7 +1171,10 @@ let viewApi = null;   // 3D画面の視点操作（ボタンから呼ぶ）
 
         function goToStep3() { switchStep(3); }
         function goToAssembly() { switchStep(5); }
-        function goToStep6() { switchStep(6); }
+        function goToOrtho() { switchStep(7); }
+        function goToNail() { switchStep(6); }
+        function goToStep8() { switchStep(8); }
+        function goToStep9() { switchStep(9); }
 
         // --- ステップ①：板材入力 ---
         function renderBoardInputs() {
@@ -1626,8 +1923,8 @@ let viewApi = null;   // 3D画面の視点操作（ボタンから呼ぶ）
         }
 
         // --- ステップ⑤：3D組立シミュレーション ---
-        function initAssembly3D() {
-            const container = document.getElementById('three-canvas-container');
+        function initAssembly3D(containerId = 'three-canvas-container') {
+            const container = document.getElementById(containerId);
             container.innerHTML = '';
 
             const width = container.clientWidth || 600;
@@ -1666,7 +1963,9 @@ let viewApi = null;   // 3D画面の視点操作（ボタンから呼ぶ）
             const viewTarget = new THREE.Vector3(0, 0, 0);
             const MIN_DIST = 15, MAX_DIST = 3000;
 
-            let dragging = false;   // ドラッグ：画面（視点）の移動。回転はボタンで行う
+            let dragging = false;   // 左ドラッグ：画面（視点）の移動 ／ 右ドラッグ：回転（ボタンでも回せる）
+            let dragButton = 0;
+            let downPos = { x: 0, y: 0 };
             let previousMousePosition = { x: 0, y: 0 };
             let anim = null;        // ボタンによる視点切り替えのアニメーション
 
@@ -1682,16 +1981,26 @@ let viewApi = null;   // 3D画面の視点操作（ボタンから呼ぶ）
             renderer.domElement.addEventListener('mousedown', (e) => {
                 anim = null;
                 dragging = true;
+                dragButton = e.button;
                 previousMousePosition = { x: e.clientX, y: e.clientY };
+                downPos = { x: e.clientX, y: e.clientY };
 
-                if(e.button === 0) {
+                if(e.button === 0 && !nailMode3D && !simMode) {
                     setMouseFromEvent(e);
                     raycaster.setFromCamera(mouse, camera);
                     const intersects = raycaster.intersectObjects(assembledMeshes);
-                    if(intersects.length > 0) {
-                        selectMesh(intersects[0].object);
-                    }
+                    if(intersects.length > 0) selectMesh(intersects[0].object);
                 }
+            });
+
+            // 釘を打つモード：ドラッグせずにクリックしたときだけ釘を打つ（ドラッグは画面の移動）
+            renderer.domElement.addEventListener('mouseup', (e) => {
+                if(e.button !== 0 || !nailMode3D) return;
+                if(Math.hypot(e.clientX - downPos.x, e.clientY - downPos.y) > 4) return;
+                setMouseFromEvent(e);
+                raycaster.setFromCamera(mouse, camera);
+                const intersects = raycaster.intersectObjects(assembledMeshes);
+                if(intersects.length > 0) addNailFromHit(intersects[0]);
             });
 
             renderer.domElement.addEventListener('mousemove', (e) => {
@@ -1699,6 +2008,18 @@ let viewApi = null;   // 3D画面の視点操作（ボタンから呼ぶ）
                 const deltaX = e.clientX - previousMousePosition.x;
                 const deltaY = e.clientY - previousMousePosition.y;
                 previousMousePosition = { x: e.clientX, y: e.clientY };
+
+                if(dragButton === 2) {
+                    // 右ドラッグ：注目点を中心に回転
+                    const offset = camera.position.clone().sub(viewTarget);
+                    const sph = new THREE.Spherical().setFromVector3(offset);
+                    sph.theta -= deltaX * 0.008;
+                    sph.phi = Math.max(0.05, Math.min(Math.PI - 0.05, sph.phi - deltaY * 0.006));
+                    offset.setFromSpherical(sph);
+                    camera.position.copy(viewTarget).add(offset);
+                    camera.lookAt(viewTarget);
+                    return;
+                }
 
                 // つかんで動かす感覚：マウスを動かした向きに、画面の中身が付いてくる
                 const dist = camera.position.distanceTo(viewTarget);
@@ -1753,6 +2074,12 @@ let viewApi = null;   // 3D画面の視点操作（ボタンから呼ぶ）
             };
 
             viewApi = {
+                orbitNow(dTheta) {
+                    const c = currentSph();
+                    const off = new THREE.Vector3().setFromSpherical(new THREE.Spherical(c.radius, c.phi, c.theta + dTheta));
+                    camera.position.copy(viewTarget).add(off);
+                    camera.lookAt(viewTarget);
+                },
                 setView(name) {
                     const v = VIEWS[name];
                     if(!v) return;
@@ -1884,6 +2211,7 @@ let viewApi = null;   // 3D画面の視点操作（ボタンから呼ぶ）
 
         function loadAssemblyScene() {
             assembledMeshes = [];
+            selectedMesh = null;
             const project = getCurrentProject();
             if(!project || !project.assemblyParts) return;
 
@@ -1902,23 +2230,24 @@ let viewApi = null;   // 3D画面の視点操作（ボタンから呼ぶ）
                 scene.add(mesh);
                 assembledMeshes.push(mesh);
             });
-            updateAssemblyHighlights();
+            if(!simMode && sharedSelIdx >= 0 && sharedSelIdx < assembledMeshes.length) selectMesh(assembledMeshes[sharedSelIdx]);
+            else updateAssemblyHighlights();
         }
 
         function saveAssemblyScene() {
             const project = getCurrentProject();
             if(!project) return;
 
-            // 部品の端がmmの整数位置にそろうよう、位置を最大0.5mmだけ補正する（寸法に0.5が出ないように）
+            // 部品の端が0.5mm単位の位置にそろうよう、位置を最大0.25mmだけ補正する
             assembledMeshes.forEach(mesh => {
                 const b = worldBoxFromPart({
                     length: mesh.userData.length, width: mesh.userData.width, thickness: mesh.userData.thickness,
                     posX: mesh.position.x, posY: mesh.position.y, posZ: mesh.position.z,
                     rotX: mesh.rotation.x, rotY: mesh.rotation.y, rotZ: mesh.rotation.z
                 });
-                mesh.position.x += Math.round(b.x0) - b.x0;
-                mesh.position.y += Math.round(b.y0) - b.y0;
-                mesh.position.z += Math.round(b.z0) - b.z0;
+                mesh.position.x += snapHalf(b.x0) - b.x0;
+                mesh.position.y += snapHalf(b.y0) - b.y0;
+                mesh.position.z += snapHalf(b.z0) - b.z0;
             });
 
             project.assemblyParts = assembledMeshes.map(mesh => ({
@@ -1942,6 +2271,7 @@ let viewApi = null;   // 3D画面の視点操作（ボタンから呼ぶ）
                 selectedMesh.material.emissive.setHex(0x000000);
             }
             selectedMesh = mesh;
+            sharedSelIdx = assembledMeshes.indexOf(mesh);
             if(selectedMesh && selectedMesh.material) {
                 selectedMesh.material.emissive.setHex(0x332211);
                 document.getElementById('current-selected-part-name').textContent = `選択中: ${selectedMesh.userData.name} (${selectedMesh.userData.length}×${selectedMesh.userData.width})`;
@@ -2001,8 +2331,166 @@ let viewApi = null;   // 3D画面の視点操作（ボタンから呼ぶ）
             return { contact, parallel, sameHeight };
         }
 
+
+        // ------------------------------------------------------------
+        // 釘のデータ： { part:部品の番号, dx,dy,dz:部品の最小角からの位置(mm), view:寸法を表示する図, len:釘の長さ }
+        // 3D組立・正投影図・釘打ち画面で共通。部品を動かすと釘も付いてくる
+        // ------------------------------------------------------------
+        function partBox(d) {
+            const b = worldBoxFromPart(d);
+            const sx = snapHalf(b.x0) - b.x0, sy = snapHalf(b.y0) - b.y0, sz = snapHalf(b.z0) - b.z0;
+            return { x0: b.x0 + sx, x1: b.x1 + sx, y0: b.y0 + sy, y1: b.y1 + sy, z0: b.z0 + sz, z1: b.z1 + sz };
+        }
+
+        function normalizeNails(project) {
+            if(!project || !project.nails) return;
+            const parts = project.assemblyParts || [];
+            project.nails = project.nails.filter(n => parts[n.part]);
+            project.nails.forEach(n => {
+                if(n.axis === undefined) { n.axis = n.view === 'front' ? 'z' : n.view === 'top' ? 'y' : 'x'; n.sign = 1; }
+                if(n.dx !== undefined) return;
+                // 以前の形式（図の上の2次元位置）を3次元に直す
+                const B = partBox(parts[n.part]);
+                if(n.view === 'front') { n.dx = n.du; n.dy = n.dv; n.dz = B.z1 - B.z0; }
+                else if(n.view === 'top') { n.dx = n.du; n.dy = B.y1 - B.y0; n.dz = (B.z1 - B.z0) - n.dv; }
+                else { n.dx = B.x1 - B.x0; n.dy = n.dv; n.dz = (B.z1 - B.z0) - n.du; }
+                delete n.du; delete n.dv;
+            });
+        }
+
+        function nailWorldPos(n, d) {
+            const B = partBox(d);
+            return { x: B.x0 + n.dx, y: B.y0 + n.dy, z: B.z0 + n.dz };
+        }
+
+        function clampNail(n, d) {
+            const B = partBox(d);
+            n.dx = Math.max(0, Math.min(B.x1 - B.x0, n.dx));
+            n.dy = Math.max(0, Math.min(B.y1 - B.y0, n.dy));
+            n.dz = Math.max(0, Math.min(B.z1 - B.z0, n.dz));
+        }
+
+        // 釘の頭が、打った面の上にくるようにする
+        function surfaceNail(n, d) {
+            const B = partBox(d);
+            if(n.axis === 'x') n.dx = n.sign > 0 ? B.x1 - B.x0 : 0;
+            if(n.axis === 'y') n.dy = n.sign > 0 ? B.y1 - B.y0 : 0;
+            if(n.axis === 'z') n.dz = n.sign > 0 ? B.z1 - B.z0 : 0;
+        }
+
+        const NAIL_DEFAULT_LEN = 30;
+
+        function getNailLen() {
+            const v = Number((document.getElementById('nail-length-input') || {}).value);
+            return v > 0 ? v : null;
+        }
+
+        // 3D画面の釘（赤い球）を作り直す
+        function refreshNails3D() {
+            if(typeof THREE === 'undefined' || !scene) return;
+            nailMeshes.forEach(o => { scene.remove(o); o.traverse(c => { if(c.geometry) c.geometry.dispose(); if(c.material) c.material.dispose(); }); });
+            nailMeshes = [];
+            const project = getCurrentProject();
+            if(!project || !project.nails) return;
+            project.nails.forEach((n, i) => {
+                const m = assembledMeshes[n.part];
+                if(!m) return;
+                const pos = nailWorldPos(n, {
+                    length: m.userData.length, width: m.userData.width, thickness: m.userData.thickness,
+                    posX: m.position.x, posY: m.position.y, posZ: m.position.z,
+                    rotX: m.rotation.x, rotY: m.rotation.y, rotZ: m.rotation.z
+                });
+                const sel = !simMode && (i === sharedNailIdx);
+                const L = n.len || NAIL_DEFAULT_LEN;
+                const mat = new THREE.MeshStandardMaterial({ color: sel ? 0xffb4b4 : 0xc3c7cf, metalness: 0.75, roughness: 0.35, emissive: sel ? 0x7a1010 : 0x000000 });
+                const o = new THREE.Group();
+                const shaft = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.1, L, 10), mat);
+                shaft.position.y = -L / 2;                               // 部品の中へ向かって打ち込む
+                const head = new THREE.Mesh(new THREE.CylinderGeometry(3.2, 3.2, 1.6, 16), mat);
+                head.position.y = 0.8;                                    // 頭は面の上にのせる
+                o.add(shaft); o.add(head);
+                const normal = new THREE.Vector3(n.axis === 'x' ? n.sign : 0, n.axis === 'y' ? n.sign : 0, n.axis === 'z' ? n.sign : 0);
+                o.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), normal);
+                o.position.set(pos.x, pos.y, pos.z);
+                o.userData = { nailIdx: i, base: o.position.clone(), normal: normal.clone(), L };
+                o.traverse(c => { c.raycast = () => {}; });
+                scene.add(o);
+                nailMeshes.push(o);
+            });
+        }
+
+        function toggleNailMode3D() {
+            nailMode3D = !nailMode3D;
+            syncNailModeBtn();
+        }
+
+        function syncNailModeBtn() {
+            const b = document.getElementById('nail-mode-btn');
+            if(b) {
+                b.textContent = nailMode3D ? '🔨 釘を打つモード：オン（部品をクリック）' : '🔨 釘を打つモード：オフ';
+                b.className = 'text-xs font-bold py-1.5 rounded border transition ' + (nailMode3D ? 'bg-red-600 text-white border-red-700' : 'bg-white text-slate-700 border-slate-300 hover:bg-red-50');
+            }
+        }
+
+        function undoLastNail() {
+            const project = getCurrentProject();
+            if(!project || !project.nails || project.nails.length === 0) return;
+            project.nails.pop();
+            sharedNailIdx = -1;
+            saveCurrentProject();
+            afterNailChange();
+        }
+
+        function addNailFromHit(hit) {
+            const project = getCurrentProject();
+            const mesh = hit.object;
+            const idx = assembledMeshes.indexOf(mesh);
+            if(!project || idx < 0) return;
+            const d = {
+                length: mesh.userData.length, width: mesh.userData.width, thickness: mesh.userData.thickness,
+                posX: mesh.position.x, posY: mesh.position.y, posZ: mesh.position.z,
+                rotX: mesh.rotation.x, rotY: mesh.rotation.y, rotZ: mesh.rotation.z
+            };
+            const B = partBox(d);
+            const nrm = hit.face.normal.clone().transformDirection(mesh.matrixWorld);
+            const ax = [Math.abs(nrm.x), Math.abs(nrm.y), Math.abs(nrm.z)];
+            const k = ax.indexOf(Math.max(...ax));
+            const n = {
+                part: idx,
+                dx: snapHalf(hit.point.x - B.x0), dy: snapHalf(hit.point.y - B.y0), dz: snapHalf(hit.point.z - B.z0),
+                axis: ['x', 'y', 'z'][k], sign: (nrm.getComponent(k) >= 0 ? 1 : -1),
+                view: k === 2 ? 'front' : k === 1 ? 'top' : 'right',
+                len: getNailLen()
+            };
+            clampNail(n, d);
+            surfaceNail(n, d);
+            if(!project.nails) project.nails = [];
+            project.nails.push(n);
+            sharedNailIdx = project.nails.length - 1;
+            saveCurrentProject();
+            afterNailChange();
+        }
+
+        function afterNailChange() {
+            const vis = id => { const c = document.getElementById(id); return c && !c.classList.contains('hidden'); };
+            if(vis('step6-container')) renderNailStep();
+            else if(vis('step7-container')) renderOrthoStep();
+            else refreshNails3D();
+        }
+
         function updateAssemblyHighlights() {
             if(typeof THREE === 'undefined' || !assembledMeshes) return;
+            if(simMode) {
+                // シミュレーション中は、色分けをせず、木の色のままにする
+                assembledMeshes.forEach(m => {
+                    m.material.color.setHex(0xdeb887);
+                    m.material.emissive.setHex(0x000000);
+                    (m.overlayMeshes || []).forEach(o => { m.remove(o); o.geometry.dispose(); o.material.dispose(); });
+                    m.overlayMeshes = [];
+                });
+                refreshNails3D();
+                return;
+            }
             const items = assembledMeshes.map(m => ({
                 length: m.userData.length, width: m.userData.width, thickness: m.userData.thickness,
                 posX: m.position.x, posY: m.position.y, posZ: m.position.z,
@@ -2027,6 +2515,8 @@ let viewApi = null;   // 3D画面の視点操作（ボタンから呼ぶ）
                 if(r.parallel[i]) addOverlay(0x2563eb, 0.8);
                 if(r.sameHeight[i]) addOverlay(0x16a34a, 1.6);
             });
+            normalizeNails(getCurrentProject());
+            refreshNails3D();
         }
 
         function rotateSelectedPart(axis, angleDeg) {
@@ -2054,18 +2544,28 @@ let viewApi = null;   // 3D画面の視点操作（ボタンから呼ぶ）
 
         function removeSelectedPartFromScene() {
             if(!selectedMesh) return;
+            const removedIdx = assembledMeshes.indexOf(selectedMesh);
+            const proj = getCurrentProject();
+            if(proj && proj.nails && removedIdx >= 0) {
+                proj.nails = proj.nails.filter(n => n.part !== removedIdx).map(n => n.part > removedIdx ? Object.assign({}, n, { part: n.part - 1 }) : n);
+            }
             scene.remove(selectedMesh);
             assembledMeshes = assembledMeshes.filter(m => m !== selectedMesh);
             selectedMesh = null;
+            sharedSelIdx = -1;
             document.getElementById('current-selected-part-name').textContent = '選択中の部品: なし';
             saveAssemblyScene();
         }
 
+        let animLoopOn = false;
         function animate3D() {
-            requestAnimationFrame(animate3D);
-            if(renderer && scene && camera) {
-                renderer.render(scene, camera);
-            }
+            if(animLoopOn) return;
+            animLoopOn = true;
+            const loop = () => {
+                requestAnimationFrame(loop);
+                if(renderer && scene && camera) renderer.render(scene, camera);
+            };
+            loop();
         }
 
         // --- ステップ⑥：画像出力・コメント ---
@@ -2173,6 +2673,20 @@ let viewApi = null;   // 3D画面の視点操作（ボタンから呼ぶ）
                     const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0x5c3a21 }));
                     m.add(line);
                     isoScene.add(m);
+                });
+                normalizeNails(project);
+                (project.nails || []).forEach(n => {
+                    const d = project.assemblyParts[n.part];
+                    if(!d) return;
+                    const pos = nailWorldPos(n, d);
+                    // 中塗りのない黒丸（輪）。等角図のカメラの方向に向ける
+                    // 打った面にはりつけ、他の部品にかくれる所では表示しない（細い線・小さめ）
+                    const nv = { x: n.axis === 'x' ? n.sign : 0, y: n.axis === 'y' ? n.sign : 0, z: n.axis === 'z' ? n.sign : 0 };
+                    const o = new THREE.Mesh(new THREE.RingGeometry(1.1, 1.5, 32), new THREE.MeshBasicMaterial({ color: 0x000000, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 }));
+                    o.position.set(pos.x + nv.x * 0.3, pos.y + nv.y * 0.3, pos.z + nv.z * 0.3);
+                    o.lookAt(pos.x + nv.x, pos.y + nv.y, pos.z + nv.z);
+                    o.renderOrder = 20;
+                    isoScene.add(o);
                 });
             } else {
                 const geom = new THREE.BoxGeometry(100, 12, 100);
@@ -2285,6 +2799,479 @@ let viewApi = null;   // 3D画面の視点操作（ボタンから呼ぶ）
                 console.error('PDF export error:', err);
                 showAlert('PDFの保存に失敗しました。');
             }
+        }
+
+        // ============================================================
+        // ステップ⑥：正投影図での微調整（3D組立のデータ project.assemblyParts を直接変更）
+        // ============================================================
+        function renderOrthoStep() {
+            const project = getCurrentProject();
+            if(!project) return;
+            const parts = project.assemblyParts || [];
+            if(sharedSelIdx >= parts.length) sharedSelIdx = -1;
+
+            const list = document.getElementById('ortho-parts-list');
+            list.innerHTML = '';
+            if(parts.length === 0) {
+                list.innerHTML = '<p class="text-xs text-slate-400">3D組立で部品を配置してください。</p>';
+            }
+            parts.forEach((d, i) => {
+                const nm = (d.userData && d.userData.name) || '部品';
+                const b = document.createElement('button');
+                b.className = 'text-left p-2 rounded-lg border text-xs transition ' + (i === sharedSelIdx ? 'bg-amber-100 border-amber-500 font-bold' : 'bg-white border-slate-200 hover:border-amber-400');
+                b.innerHTML = `<span class="text-amber-900">${i + 1}. ${escHtml(nm)}</span><span class="block text-[10px] text-slate-500">${d.length} × ${d.width} × ${d.thickness}</span>`;
+                b.onclick = () => selectOrthoPart(i);
+                list.appendChild(b);
+            });
+
+            const nameEl = document.getElementById('ortho-selected-name');
+            if(sharedSelIdx >= 0 && parts[sharedSelIdx]) {
+                const d = parts[sharedSelIdx];
+                nameEl.textContent = `選択中: ${(d.userData && d.userData.name) || '部品'} (${d.length}×${d.width})`;
+            } else {
+                nameEl.textContent = '選択中の部品: なし';
+            }
+            document.querySelectorAll('.ortho-step').forEach(btn => {
+                const on = Number(btn.dataset.step) === orthoStepMm;
+                btn.className = 'ortho-step text-xs py-1.5 rounded font-bold border ' + (on ? 'bg-amber-500 text-white border-amber-600' : 'bg-white text-slate-700');
+            });
+
+            normalizeNails(project);
+            const faceName = { 'x+': '右の面', 'x-': '左の面', 'y+': '上の面', 'y-': '下の面', 'z+': '手前の面', 'z-': '奥の面' };
+            const nl = document.getElementById('ortho-nail-list');
+            nl.innerHTML = '';
+            const nails = project.nails || [];
+            if(sharedNailIdx >= nails.length) sharedNailIdx = -1;
+            if(nails.length === 0) nl.innerHTML = '<p class="text-xs text-slate-400">釘打ちのステップで釘を打つと、ここに出ます。</p>';
+            nails.forEach((n, i) => {
+                const d = parts[n.part];
+                const nm = (d && d.userData && d.userData.name) || '部品';
+                const b = document.createElement('button');
+                b.className = 'text-left p-1.5 rounded-lg border text-[11px] transition ' + (i === sharedNailIdx ? 'bg-amber-100 border-amber-500 font-bold' : 'bg-white border-slate-200 hover:border-amber-400');
+                b.textContent = `${i + 1}. ${nm}（${faceName[n.axis + (n.sign > 0 ? '+' : '-')] || ''}）${n.len ? '・釘' + n.len : ''}`;
+                b.onclick = () => selectNail(i);
+                nl.appendChild(b);
+            });
+            document.getElementById('ortho-nail-name').textContent = sharedNailIdx >= 0 ? `選択中の釘: ${sharedNailIdx + 1}番` : '選択中の釘: なし';
+
+            renderOrthoPage(project, 'ortho-edit-svg', { interactive: true, sel: sharedSelIdx, selNail: sharedNailIdx, footer: false });
+        }
+
+        function selectNail(i) {
+            sharedNailIdx = i;
+            afterNailChange();
+        }
+
+        function selectOrthoPart(i) {
+            sharedSelIdx = i;
+            renderOrthoStep();
+        }
+
+        function setOrthoStep(v) {
+            orthoStepMm = v;
+            renderOrthoStep();
+        }
+
+        function snapPartData(d) {
+            const b = worldBoxFromPart(d);
+            d.posX += snapHalf(b.x0) - b.x0;
+            d.posY += snapHalf(b.y0) - b.y0;
+            d.posZ += snapHalf(b.z0) - b.z0;
+        }
+
+        function moveOrthoPart(axis, dir) {
+            const project = getCurrentProject();
+            const d = project && project.assemblyParts && project.assemblyParts[sharedSelIdx];
+            if(!d) { showAlert('動かす部品を、図または一覧から選んでください。'); return; }
+            const delta = dir * orthoStepMm;
+            if(axis === 'x') d.posX += delta;
+            if(axis === 'y') d.posY += delta;
+            if(axis === 'z') d.posZ += delta;
+            snapPartData(d);
+            saveCurrentProject();
+            renderOrthoStep();
+        }
+
+        function rotateOrthoPart(axis, deg) {
+            const project = getCurrentProject();
+            const d = project && project.assemblyParts && project.assemblyParts[sharedSelIdx];
+            if(!d) { showAlert('回転させる部品を、図または一覧から選んでください。'); return; }
+            const rad = deg * Math.PI / 180;
+            if(axis === 'x') d.rotX = (d.rotX || 0) + rad;
+            if(axis === 'y') d.rotY = (d.rotY || 0) + rad;
+            if(axis === 'z') d.rotZ = (d.rotZ || 0) + rad;
+            snapPartData(d);
+            saveCurrentProject();
+            renderOrthoStep();
+        }
+
+        // ============================================================
+        // ステップ⑦：釘打ち
+        // ============================================================
+        function renderNailStep() {
+            const project = getCurrentProject();
+            if(!project) return;
+            if(!project.nails) project.nails = [];
+            normalizeNails(project);
+            if(sharedNailIdx >= project.nails.length) sharedNailIdx = -1;
+            const faceName = { 'x+': '右の面', 'x-': '左の面', 'y+': '上の面', 'y-': '下の面', 'z+': '手前の面', 'z-': '奥の面' };
+            const list = document.getElementById('nail-list');
+            list.innerHTML = '';
+            if(project.nails.length === 0) list.innerHTML = '<p class="text-xs text-slate-400">まだ釘を打っていません。</p>';
+            project.nails.forEach((n, i) => {
+                const d = (project.assemblyParts || [])[n.part];
+                const nm = (d && d.userData && d.userData.name) || '部品';
+                const row = document.createElement('div');
+                row.className = 'flex items-center gap-2 rounded-lg p-2 cursor-pointer border ' + (i === sharedNailIdx ? 'bg-amber-100 border-amber-500' : 'bg-white border-slate-200');
+                row.onclick = () => { sharedNailIdx = i; renderNailStep(); };
+                row.innerHTML = `<span class="shrink-0 w-5 h-5 rounded-full bg-red-600 text-white text-[11px] font-bold flex items-center justify-center">${i + 1}</span>
+                    <span class="flex-1 text-[11px] leading-snug text-slate-700">${escHtml(nm)}（${faceName[n.axis + (n.sign > 0 ? '+' : '-')] || ''}）${n.len ? '・釘' + n.len : ''}</span>
+                    <button onclick="event.stopPropagation(); deleteNail(${i})" class="shrink-0 text-[11px] bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded px-2 py-1 font-medium">🗑️ 削除</button>`;
+                list.appendChild(row);
+            });
+            document.getElementById('nail-selected-name').textContent = sharedNailIdx >= 0 ? `選択中の釘: ${sharedNailIdx + 1}番` : '選択中の釘: なし（一覧から選ぶ）';
+            document.querySelectorAll('.ortho-step').forEach(btn => {
+                const on = Number(btn.dataset.step) === orthoStepMm;
+                btn.className = 'ortho-step text-xs py-1.5 rounded font-bold border ' + (on ? 'bg-amber-500 text-white border-amber-600' : 'bg-white text-slate-700');
+            });
+            refreshNails3D();
+        }
+
+        function setNailStep(v) { orthoStepMm = v; renderNailStep(); }
+
+        function moveNail(axis, dir) {
+            const project = getCurrentProject();
+            const n = project && project.nails && project.nails[sharedNailIdx];
+            if(!n) { showAlert('動かす釘を、一覧から選んでください。'); return; }
+            const delta = dir * orthoStepMm;
+            if(axis === 'x') n.dx += delta;
+            if(axis === 'y') n.dy += delta;
+            if(axis === 'z') n.dz += delta;
+            clampNail(n, project.assemblyParts[n.part]);
+            surfaceNail(n, project.assemblyParts[n.part]);
+            saveCurrentProject();
+            afterNailChange();
+        }
+
+        function nailClick(e) {
+            const project = getCurrentProject();
+            const r = e.currentTarget, svg = r.ownerSVGElement;
+            const pt = svg.createSVGPoint();
+            pt.x = e.clientX; pt.y = e.clientY;
+            const loc = pt.matrixTransform(svg.getScreenCTM().inverse());
+            const x = +r.getAttribute('x'), y = +r.getAttribute('y'), w = +r.getAttribute('width'), h = +r.getAttribute('height');
+            const u0 = +r.dataset.u0, u1 = +r.dataset.u1, v0 = +r.dataset.v0, v1 = +r.dataset.v1;
+            const u = u0 + (loc.x - x) / w * (u1 - u0);
+            const v = v1 - (loc.y - y) / h * (v1 - v0);
+            const view = r.dataset.view, part = Number(r.dataset.part);
+            const d = project.assemblyParts[part];
+            const B = partBox(d);
+            // 図の2方向は、クリックした位置。奥行きの方向は、見ている側の面（釘の頭の面）にする
+            const nail = { part, view, len: getNailLen(), dx: 0, dy: 0, dz: 0 };
+            if(view === 'front') { nail.dx = u - B.x0; nail.dy = v - B.y0; nail.dz = B.z1 - B.z0; }
+            else if(view === 'top') { nail.dx = u - B.x0; nail.dz = -v - B.z0; nail.dy = B.y1 - B.y0; }
+            else { nail.dz = -u - B.z0; nail.dy = v - B.y0; nail.dx = B.x1 - B.x0; }
+            nail.dx = snapHalf(nail.dx); nail.dy = snapHalf(nail.dy); nail.dz = snapHalf(nail.dz);
+            clampNail(nail, d);
+            if(!project.nails) project.nails = [];
+            project.nails.push(nail);
+            sharedNailIdx = project.nails.length - 1;
+            saveCurrentProject();
+            renderNailStep();
+        }
+
+        function deleteNail(i) {
+            const project = getCurrentProject();
+            if(!project || !project.nails) return;
+            project.nails.splice(i, 1);
+            sharedNailIdx = -1;
+            saveCurrentProject();
+            afterNailChange();
+        }
+
+        function clearNails() {
+            const project = getCurrentProject();
+            if(!project) return;
+            project.nails = [];
+            sharedNailIdx = -1;
+            saveCurrentProject();
+            afterNailChange();
+        }
+
+        // ============================================================
+        // ステップ⑨：組み立てのシミュレーション
+        //   部品を1枚ずつ置き、その部品が重なる釘を、ふさわしい順に打ち込んでいく
+        // ============================================================
+        let simDeps = {};   // 工程の名前(key) → 先に置いておく必要のある部品の番号
+
+        function simPartName(d, i) {
+            const nm = d && d.userData && d.userData.name;
+            return (nm && nm !== '部品') ? nm : `板${i + 1}（${d.length}×${d.width}）`;
+        }
+
+        // 工程の並び：おすすめは「板を2枚置く → 釘を打つ → 板を1枚置く → 釘を打つ …」。project.simOrder があれば、その順番にする
+        function buildSimSteps() {
+            const project = getCurrentProject();
+            const parts = (project && project.assemblyParts) || [];
+            normalizeNails(project);
+            const nails = (project && project.nails) || [];
+            const faceName = { 'x+': '右の面', 'x-': '左の面', 'y+': '上の面', 'y-': '下の面', 'z+': '手前の面', 'z-': '奥の面' };
+
+            // 釘ごとに、先に置いておく必要のある部品（釘を打つ部品と、釘の先が入り込む部品）
+            const needs = nails.map(n => {
+                const d = parts[n.part];
+                if(!d) return null;
+                const pos = nailWorldPos(n, d);
+                const L = n.len || NAIL_DEFAULT_LEN;
+                const dir = { x: n.axis === 'x' ? -n.sign : 0, y: n.axis === 'y' ? -n.sign : 0, z: n.axis === 'z' ? -n.sign : 0 };
+                const set = new Set([n.part]);
+                for(let t = 3; t <= L; t += 3) {
+                    const q = { x: pos.x + dir.x * t, y: pos.y + dir.y * t, z: pos.z + dir.z * t };
+                    parts.forEach((o, oi) => {
+                        if(oi === n.part) return;
+                        const B = partBox(o), e = 0.01;
+                        if(q.x >= B.x0 - e && q.x <= B.x1 + e && q.y >= B.y0 - e && q.y <= B.y1 + e && q.z >= B.z0 - e && q.z <= B.z1 + e) set.add(oi);
+                    });
+                }
+                return [...set];
+            });
+
+            const stepOf = {};
+            parts.forEach((d, i) => { stepOf['p' + i] = { type: 'part', idx: i, key: 'p' + i, text: `「${simPartName(d, i)}」を置く` }; });
+            simDeps = {};
+            nails.forEach((n, j) => {
+                if(!needs[j]) return;
+                const others = needs[j].filter(x => x !== n.part).map(x => `「${simPartName(parts[x], x)}」`);
+                stepOf['n' + j] = { type: 'nail', idx: j, key: 'n' + j,
+                    text: `「${simPartName(parts[n.part], n.part)}」の${faceName[n.axis + (n.sign > 0 ? '+' : '-')] || ''}に釘を打つ${others.length ? '（' + others.join('と') + 'にとめる）' : ''}${n.len ? '・' + n.len + 'mm' : ''}` };
+                simDeps['n' + j] = needs[j];
+            });
+
+            // おすすめの順番
+            const auto = [];
+            const placed = new Set(), done = new Set();
+            const flush = () => {
+                nails.forEach((n, j) => {
+                    if(!needs[j] || done.has(j)) return;
+                    if(needs[j].every(x => placed.has(x))) { auto.push('n' + j); done.add(j); }
+                });
+            };
+            parts.forEach((d, i) => {
+                auto.push('p' + i); placed.add(i);
+                if(i >= 1 || parts.length === 1) flush();
+            });
+            flush();
+
+            // 保存された順番が今の部品・釘と合っていれば、それを使う
+            let order = auto;
+            const saved = project && project.simOrder;
+            if(Array.isArray(saved) && saved.length === auto.length && saved.every(k => stepOf[k]) && new Set(saved).size === saved.length && validateSimOrder(saved).ok) order = saved;
+
+            return order.map((k, i) => Object.assign({}, stepOf[k], { label: `${i + 1}. ${stepOf[k].text}` }));
+        }
+
+        // 釘は、その釘に必要な部品を置いた後でないと打てない
+        function validateSimOrder(keys) {
+            for(let i = 0; i < keys.length; i++) {
+                const deps = simDeps[keys[i]];
+                if(!deps) continue;
+                for(const x of deps) {
+                    const at = keys.indexOf('p' + x);
+                    if(at < 0 || at > i) return { ok: false, part: x };
+                }
+            }
+            return { ok: true };
+        }
+
+        function initSimulation() {
+            simSteps = buildSimSteps();
+            simPlaying = false;
+            simStopAt = null;
+            simT = 0;
+            simSpeed = Number(document.getElementById('sim-speed').value) || 1;
+            simAuto = document.getElementById('sim-auto').checked;
+            initAssembly3D('sim-canvas-container');
+            simBase = assembledMeshes.map(m => m.position.clone());
+
+            // 金づち
+            simHammer = new THREE.Group();
+            const hHead = new THREE.Mesh(new THREE.BoxGeometry(18, 9, 9), new THREE.MeshStandardMaterial({ color: 0x555b66, metalness: 0.7, roughness: 0.4 }));
+            hHead.position.set(0, 4.5, 0);
+            const hHandle = new THREE.Mesh(new THREE.CylinderGeometry(1.6, 1.6, 46, 10), new THREE.MeshStandardMaterial({ color: 0x8b5a2b, roughness: 0.8 }));
+            hHandle.rotation.z = Math.PI / 2;
+            hHandle.position.set(32, 4.5, 0);
+            simHammer.add(hHead); simHammer.add(hHandle);
+            simHammer.visible = false;
+            simHammer.traverse(c => { c.raycast = () => {}; });
+            scene.add(simHammer);
+
+            renderSimList();
+
+            if(viewApi) viewApi.fitAll();   // 部品が置かれた状態を基準に、全体が見える位置に合わせる
+            simApply();
+            simUpdateUI();
+        }
+
+        function renderSimList() {
+            const list = document.getElementById('sim-step-list');
+            list.innerHTML = '';
+            if(simSteps.length === 0) list.innerHTML = '<p class="text-xs text-slate-400">3D組立で部品を配置してください。</p>';
+            simSteps.forEach((st, k) => {
+                const row = document.createElement('div');
+                row.className = 'sim-step-item flex items-stretch gap-1 rounded-lg border text-[11px] transition bg-white border-slate-200';
+                row.dataset.k = k;
+                const label = document.createElement('button');
+                label.className = 'flex-1 text-left p-1.5';
+                label.textContent = st.label;
+                label.onclick = () => simJump(k);
+                const up = document.createElement('button');
+                up.className = 'px-1.5 text-slate-500 hover:text-amber-700 font-bold';
+                up.textContent = '▲'; up.title = 'この工程を前にする';
+                up.onclick = () => simMove(k, -1);
+                const down = document.createElement('button');
+                down.className = 'px-1.5 text-slate-500 hover:text-amber-700 font-bold';
+                down.textContent = '▼'; down.title = 'この工程を後ろにする';
+                down.onclick = () => simMove(k, 1);
+                row.appendChild(label); row.appendChild(up); row.appendChild(down);
+                list.appendChild(row);
+            });
+        }
+
+        function simReloadSteps() {
+            simPlaying = false; simStopAt = null;
+            simSteps = buildSimSteps();
+            simT = Math.max(0, Math.min(simT, simSteps.length));
+            renderSimList();
+            simApply();
+            simUpdateUI();
+        }
+
+        function simMove(k, dir) {
+            const project = getCurrentProject();
+            const j = k + dir;
+            if(!project || j < 0 || j >= simSteps.length) return;
+            const keys = simSteps.map(s => s.key);
+            [keys[k], keys[j]] = [keys[j], keys[k]];
+            const check = validateSimOrder(keys);
+            if(!check.ok) {
+                const parts = project.assemblyParts || [];
+                showAlert(`その順番にはできません。釘は、先に「${simPartName(parts[check.part], check.part)}」を置いてから打ちます。`);
+                return;
+            }
+            project.simOrder = keys;
+            saveCurrentProject();
+            simReloadSteps();
+        }
+
+        function simAutoOrder() {
+            const project = getCurrentProject();
+            if(!project) return;
+            delete project.simOrder;
+            saveCurrentProject();
+            simReloadSteps();
+        }
+
+        function simApply() {
+            if(typeof THREE === 'undefined' || !assembledMeshes) return;
+            const pState = new Array(assembledMeshes.length).fill(0);
+            const nState = {};
+            simSteps.forEach((st, k) => {
+                const p = Math.max(0, Math.min(1, simT - k));
+                if(st.type === 'part') pState[st.idx] = p; else nState[st.idx] = p;
+            });
+            const ease = x => 1 - Math.pow(1 - x, 3);
+
+            assembledMeshes.forEach((m, i) => {
+                const p = pState[i], b = simBase[i];
+                m.visible = p > 0;
+                if(b) m.position.set(b.x, b.y + 140 * (1 - ease(p)), b.z);   // 上から降ろして置く
+            });
+
+            let hammer = null;
+            nailMeshes.forEach(o => {
+                const p = nState[o.userData.nailIdx] || 0;
+                o.visible = p > 0;
+                if(p <= 0) return;
+                const u = o.userData;
+                o.position.copy(u.base).addScaledVector(u.normal, p >= 1 ? 0 : (1 - p) * u.L);   // 釘が少しずつ打ち込まれる
+                if(p < 1) hammer = { o, p };
+            });
+            if(simHammer) {
+                simHammer.visible = !!hammer;
+                if(hammer) {
+                    const lift = 1.6 + 4.5 + 12 * Math.abs(Math.cos(hammer.p * Math.PI * 4));   // 4回たたく
+                    simHammer.position.copy(hammer.o.position).addScaledVector(hammer.o.userData.normal, lift);
+                    simHammer.quaternion.copy(hammer.o.quaternion);
+                }
+            }
+        }
+
+        function simUpdateUI() {
+            const N = simSteps.length;
+            const slider = document.getElementById('sim-slider');
+            if(slider) slider.value = N > 0 ? Math.round(simT / N * 100 * 10) / 10 : 0;
+            if(slider) { slider.max = 100; slider.step = 0.1; }
+            const cur = Math.max(0, Math.min(N - 1, Math.floor(simT + 1e-9)));
+            const done = simT >= N && N > 0;
+            const lab = document.getElementById('sim-progress-label');
+            if(lab) lab.textContent = N === 0 ? '工程がありません' : (done ? `工程 ${N} / ${N}（完成）` : `工程 ${Math.max(0, cur) + 1} / ${N}`);
+            const cap = document.getElementById('sim-caption');
+            if(cap) cap.textContent = N === 0 ? '3D組立で部品を配置し、釘打ちで釘を打ってください。' : (done ? '🎉 完成！' : (simT <= 0 && !simPlaying ? '工程を再生してください' : simSteps[cur].label));
+            document.querySelectorAll('.sim-step-item').forEach(b => {
+                const k = Number(b.dataset.k);
+                const state = (k < Math.floor(simT)) || done ? 'done' : (k === cur && simT > 0 ? 'now' : 'todo');
+                b.className = 'sim-step-item flex items-stretch gap-1 rounded-lg border text-[11px] transition ' +
+                    (state === 'now' ? 'bg-amber-100 border-amber-500 font-bold' : state === 'done' ? 'bg-emerald-50 border-emerald-200 text-slate-500' : 'bg-white border-slate-200 hover:border-amber-400');
+            });
+            const pb = document.getElementById('sim-play-btn');
+            if(pb) pb.textContent = simPlaying ? '⏸ 一時停止' : (done ? '↻ もう一度' : '▶ 再生');
+        }
+
+        function simLoop(now) {
+            if(!simPlaying || !simMode) return;
+            now = performance.now();
+            const dt = Math.max(0, Math.min(0.1, (now - simLast) / 1000));
+            simLast = now;
+            const N = simSteps.length;
+            simT += dt * simSpeed / 1.2;
+            if(simStopAt !== null && simT >= simStopAt) { simT = simStopAt; simStopAt = null; simPlaying = false; }
+            if(simT >= N) { simT = N; simPlaying = false; }
+            if(simAuto && viewApi && simPlaying) viewApi.orbitNow(dt * 0.25);
+            simApply();
+            simUpdateUI();
+            if(simPlaying) requestAnimationFrame(simLoop);
+        }
+
+        function simPlay() {
+            if(simSteps.length === 0) return;
+            if(simT >= simSteps.length) simT = 0;
+            simPlaying = true;
+            simLast = performance.now();
+            requestAnimationFrame(simLoop);
+            simUpdateUI();
+        }
+        function simPause() { simPlaying = false; simStopAt = null; simUpdateUI(); }
+        function simToggle() { if(simPlaying) simPause(); else { simStopAt = null; simPlay(); } }
+        function simReset() { simPlaying = false; simStopAt = null; simT = 0; simApply(); simUpdateUI(); }
+        function simNext() {
+            if(simSteps.length === 0 || simT >= simSteps.length) return;
+            simStopAt = Math.floor(simT + 1e-6) + 1;
+            simPlay();
+        }
+        function simPrev() {
+            simPlaying = false; simStopAt = null;
+            simT = Math.max(0, Math.ceil(simT - 1e-6) - 1);
+            simApply(); simUpdateUI();
+        }
+        function simSetT(frac) {
+            simPlaying = false; simStopAt = null;
+            simT = frac * simSteps.length;
+            simApply(); simUpdateUI();
+        }
+        function simJump(k) {
+            simPlaying = false; simStopAt = null;
+            simT = k + 1;   // その工程まで終わった状態にする
+            simApply(); simUpdateUI();
         }
 
         // ============================================================
@@ -2440,8 +3427,10 @@ let viewApi = null;   // 3D画面の視点操作（ボタンから呼ぶ）
             };
         }
 
-        function renderOrthoPage(project) {
-            const svg = document.getElementById('pdf-ortho-svg');
+        const snapHalf = v => Math.round(v * 2) / 2;
+
+        function renderOrthoPage(project, svgId = 'pdf-ortho-svg', opts = {}) {
+            const svg = document.getElementById(svgId);
             if(!svg) return;
             const W = 1260, H = 890, INK = '#1f2937';
 
@@ -2452,7 +3441,7 @@ let viewApi = null;   // 3D画面の視点操作（ボタンから呼ぶ）
             out += `<text x="24" y="76" font-size="16" font-weight="bold" fill="${INK}">第三角法による正投影図</text>`;
 
             // 下の欄：作成日・名前・単位
-            const footer = () => `
+            const footer = () => opts.footer === false ? '' : `
                 <line x1="20" y1="852" x2="${W - 20}" y2="852" stroke="${INK}" stroke-width="1"/>
                 <text x="24" y="876" font-size="13" font-weight="bold" fill="${INK}">作成日: <tspan id="pdf-ortho-date" font-weight="normal">____年__月__日 __:__</tspan></text>
                 <text x="760" y="876" font-size="13" font-weight="bold" fill="${INK}">名前:</text>
@@ -2468,8 +3457,8 @@ let viewApi = null;   // 3D画面の視点操作（ボタンから呼ぶ）
             }
 
             const boxes = parts.map(worldBoxFromPart).map(b => {
-                // 以前に保存したデータでも、端を1mm単位にそろえる
-                const sx = Math.round(b.x0) - b.x0, sy = Math.round(b.y0) - b.y0, sz = Math.round(b.z0) - b.z0;
+                // 以前に保存したデータでも、端を0.5mm単位にそろえる
+                const sx = snapHalf(b.x0) - b.x0, sy = snapHalf(b.y0) - b.y0, sz = snapHalf(b.z0) - b.z0;
                 return { x0: b.x0 + sx, x1: b.x1 + sx, y0: b.y0 + sy, y1: b.y1 + sy, z0: b.z0 + sz, z1: b.z1 + sz };
             });
             const ext = {
@@ -2560,7 +3549,66 @@ let viewApi = null;   // 3D画面の視点操作（ボタンから呼ぶ）
                     [[fx0 - 3, fY(ys[0]), laneL2 - 4, fY(ys[0])], [fx0 - 3, fY(ys[ys.length - 1]), laneL2 - 4, fY(ys[ys.length - 1])]], [-14, 16]);
             }
 
-            svg.innerHTML = out + hiddenSvg + visibleSvg + dimSvg + tools.labelLayer() + nameSvg + footer();
+            // 微調整画面：図の部品をクリックして選べるようにする（選択中は色を付ける）
+            let hitSvg = '';
+            if(opts.interactive) {
+                views.forEach(v => {
+                    rectsOf[v.key].forEach((r, i) => {
+                        const sel = (opts.sel === i);
+                        const x = v.mx(r.u0), y = v.my(r.v1), w = (r.u1 - r.u0) * s, h = (r.v1 - r.v0) * s;
+                        const act = opts.nailMode
+                            ? `onclick="nailClick(event)" data-view="${v.key}" data-part="${i}" data-u0="${r.u0}" data-u1="${r.u1}" data-v0="${r.v0}" data-v1="${r.v1}"`
+                            : `onclick="selectOrthoPart(${i})"`;
+                        hitSvg += `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${sel ? 'rgba(245,158,11,0.38)' : 'rgba(255,255,255,0.01)'}" stroke="${sel ? '#d97706' : 'none'}" stroke-width="2.5" style="cursor:${opts.nailMode ? 'crosshair' : 'pointer'}" ${act}/>`;
+                    });
+                });
+            }
+
+            // 釘打ちの位置（赤丸）。3つの図すべてに点を描き、寸法は打ったときの図にだけ書く
+            normalizeNails(project);
+            const nails = project.nails || [];
+            let nailSvg = '', nailDots = '';
+            nails.forEach((n, ni) => {
+                const B = boxes[n.part];
+                if(!B) return;
+                const P = { x: B.x0 + n.dx, y: B.y0 + n.dy, z: B.z0 + n.dz };
+                const sel = (opts.selNail === ni);
+                const uv = { front: [P.x, P.y], top: [P.x, -P.z], right: [-P.z, P.y] };
+                // 釘の頭の位置と、打ち込んだ先（部品の中）の位置
+                const L = n.len || NAIL_DEFAULT_LEN, ax = n.axis || 'z', sg = n.sign || 1;
+                const Q = { x: P.x - (ax === 'x' ? sg * L : 0), y: P.y - (ax === 'y' ? sg * L : 0), z: P.z - (ax === 'z' ? sg * L : 0) };
+                const uvQ = { front: [Q.x, Q.y], top: [Q.x, -Q.z], right: [-Q.z, Q.y] };
+                views.forEach(v => {
+                    const px = v.mx(uv[v.key][0]), py = v.my(uv[v.key][1]);
+                    const qx = v.mx(uvQ[v.key][0]), qy = v.my(uvQ[v.key][1]);
+                    const hr = Math.max(4, 3 * s);
+                    if(sel) nailDots += `<circle cx="${px}" cy="${py}" r="${hr + 4}" fill="none" stroke="#f59e0b" stroke-width="2.5"/>`;
+                    if(Math.hypot(qx - px, qy - py) < 1) {
+                        // 釘を正面から見た図：頭（円）
+                        nailDots += `<circle cx="${px}" cy="${py}" r="${hr}" fill="#9ca3af" stroke="#111827" stroke-width="1.3"/><circle cx="${px}" cy="${py}" r="${hr * 0.35}" fill="#374151"/>`;
+                    } else {
+                        // 釘を横から見た図：頭の線と、打ち込んだ部分（破線）
+                        const dxs = qx - px, dys = qy - py, len = Math.hypot(dxs, dys);
+                        const tx = -dys / len * hr, ty = dxs / len * hr;
+                        nailDots += `<line x1="${px}" y1="${py}" x2="${qx}" y2="${qy}" stroke="#374151" stroke-width="1.6" stroke-dasharray="5,3"/>`;
+                        nailDots += `<line x1="${px - tx}" y1="${py - ty}" x2="${px + tx}" y2="${py + ty}" stroke="#111827" stroke-width="3.2" stroke-linecap="round"/>`;
+                    }
+                    if(opts.interactive) nailDots += `<circle cx="${px}" cy="${py}" r="${hr + 5}" fill="rgba(255,255,255,0.01)" style="cursor:pointer" onclick="event.stopPropagation();selectNail(${ni})"/>`;
+                    if(v.key === n.view && n.len) nailDots += `<text x="${px + hr + 4}" y="${py - 7}" font-size="12" font-weight="bold" fill="#111827" stroke="#ffffff" stroke-width="3" paint-order="stroke">釘${n.len}</text>`;
+                });
+                const v = views.find(q => q.key === n.view), r = rectsOf[n.view][n.part];
+                if(v && r) {
+                    const nx = v.mx(uv[n.view][0]), ny = v.my(uv[n.view][1]);
+                    nailSvg += tools.dimH(ny, v.mx(r.u0), nx, uv[n.view][0] - r.u0, [], [-12, 14, -26]);
+                    nailSvg += tools.dimV(nx, ny, v.my(r.v0), uv[n.view][1] - r.v0, [], [-12, 14, -26]);
+                }
+            });
+            nailSvg += nailDots;
+            if(nails.length > 0 && opts.footer !== false) {
+                out += `<circle cx="${W - 322}" cy="71" r="5.5" fill="#9ca3af" stroke="#111827" stroke-width="1.3"/><text x="${W - 24}" y="76" font-size="13" fill="${INK}" text-anchor="end">釘打ち位置（寸法は部品の左端・下端から）</text>`;
+            }
+
+            svg.innerHTML = out + hiddenSvg + visibleSvg + dimSvg + hitSvg + nailSvg + tools.labelLayer() + nameSvg + footer();
             updatePdfCreatedAt();
         }
     </script>
