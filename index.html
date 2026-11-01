@@ -516,8 +516,18 @@
                         </div>
                     </div>
 
-                    <div class="bg-white border border-slate-300 rounded-xl p-2 lg:col-span-3 overflow-auto">
-                        <svg id="ortho-edit-svg" class="w-full h-auto block" viewBox="0 0 1260 890" font-family="'Noto Sans JP', 'Inter', sans-serif"></svg>
+                    <div class="lg:col-span-3 flex flex-col gap-2">
+                        <div class="flex items-center gap-2 text-xs">
+                            <span class="font-bold text-slate-600">図の拡大・縮小:</span>
+                            <button onclick="orthoZoomBy(-0.25)" class="w-9 h-8 bg-white border border-slate-300 hover:bg-amber-50 rounded font-bold text-base">－</button>
+                            <span id="ortho-zoom-label" class="w-12 text-center font-bold text-slate-700">100%</span>
+                            <button onclick="orthoZoomBy(0.25)" class="w-9 h-8 bg-white border border-slate-300 hover:bg-amber-50 rounded font-bold text-base">＋</button>
+                            <button onclick="orthoZoomSet(1)" class="px-3 h-8 bg-slate-100 border border-slate-300 hover:bg-slate-200 rounded font-medium">もとの大きさ</button>
+                            <span class="text-[10px] text-slate-500">拡大すると、この枠の中だけが大きくなります（枠の中をスクロールして見ます）。</span>
+                        </div>
+                        <div id="ortho-frame" class="bg-white border border-slate-300 rounded-xl p-2 overflow-auto" style="max-height:72vh">
+                            <svg id="ortho-edit-svg" class="block" style="width:100%;height:auto" viewBox="0 0 1260 890" font-family="'Noto Sans JP', 'Inter', sans-serif"></svg>
+                        </div>
                     </div>
                 </div>
 
@@ -2928,6 +2938,17 @@ let viewApi = null;   // 3D画面の視点操作（ボタンから呼ぶ）
             fn.onclick = nm2 ? goToStep8 : goToNail; fn.textContent = nm2 ? '📄 PDF出力画面へ進む ➔' : '🔨 釘打ち（3D）へ進む ➔';
             renderOrthoPage(project, 'ortho-edit-svg', { interactive: true, sel: nm2 ? -1 : sharedSelIdx, selNail: sharedNailIdx, footer: false, noNails: !nm2, nailsOnly: nm2 });
         }
+
+        // 正投影図の枠の中だけを拡大・縮小する（画面全体は拡大しない）
+        let orthoZoom = 1;
+        function orthoZoomSet(z) {
+            orthoZoom = Math.max(0.5, Math.min(4, z));
+            const svg = document.getElementById('ortho-edit-svg');
+            if(svg) svg.style.width = (orthoZoom * 100) + '%';
+            const lb = document.getElementById('ortho-zoom-label');
+            if(lb) lb.textContent = Math.round(orthoZoom * 100) + '%';
+        }
+        function orthoZoomBy(d) { orthoZoomSet(orthoZoom + d); }
 
         function selectNail(i) {
             sharedNailIdx = i;
